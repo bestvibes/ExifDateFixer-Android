@@ -8,7 +8,6 @@ import kotlinx.coroutines.withContext
 import org.rauschig.jarchivelib.ArchiveFormat
 import org.rauschig.jarchivelib.ArchiverFactory
 import org.rauschig.jarchivelib.CompressionType
-import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.util.*
@@ -21,7 +20,7 @@ class PerlUtils {
         }
 
         @Throws(IOException::class)
-        private fun getPerlZipToInstall(context: Context): Int {
+        private fun getPerlZipToInstall(): Int {
             val abi = getAbiToUse()
             return when {
                 "arm" in abi -> {
@@ -36,11 +35,34 @@ class PerlUtils {
             }
         }
 
+        fun isPerlInstalled(context: Context): Boolean {
+            return File(getPerlPath(context)).exists()
+        }
+
+        fun isExiftoolInstalled(context: Context): Boolean {
+            return File(getExiftoolPath(context)).exists()
+        }
+
+        private fun getPerlPath(context: Context) : String {
+            val filesDirPath = FileUtils.getFilesInstallDir(context)
+            return "$filesDirPath/${context.resources.getString(R.string.perl_path)}"
+        }
+
+        private fun getPerlLibPath(context: Context) : String {
+            val filesDirPath = FileUtils.getFilesInstallDir(context)
+            return "$filesDirPath/${context.resources.getString(R.string.perl_lib_path)}"
+        }
+
+        private fun getExiftoolPath(context: Context) : String {
+            val filesDirPath = FileUtils.getFilesInstallDir(context)
+            return "$filesDirPath/${context.resources.getString(R.string.exiftool_path)}"
+        }
+
         suspend fun installPerlAndExifTool(context: Context) {
             withContext(Dispatchers.IO) {
                 Log.d("PerlUtils", "Installing perl and exiftool...")
                 val zipsToInstall: MutableList<Int> =
-                    mutableListOf(R.raw.exiftool, R.raw.perl_libs, getPerlZipToInstall(context))
+                    mutableListOf(R.raw.exiftool, R.raw.perl_libs, getPerlZipToInstall())
 
                 val archiver = ArchiverFactory.createArchiver(ArchiveFormat.TAR, CompressionType.XZ)
                 val filesDir = File(FileUtils.getFilesInstallDir(context))
@@ -61,44 +83,26 @@ class PerlUtils {
                     }
                 }
 
-                Log.d("PerlUtils", "Setting bin/perl permissions to 493...")
-                FileUtils.chmod("${filesDir.absolutePath}/perl/bin/perl", 493)
+                Log.d("PerlUtils", "Setting perl permissions to 493...")
+                FileUtils.chmod(getPerlPath(context), 493)
             }
         }
 
-        suspend fun runExiftoolCommand(context: Context, command: String): String {
-            val filesDirPath = FileUtils.getFilesInstallDir(context)
-            val exiftoolBinary = "$filesDirPath/exiftool/exiftool"
-
-            val exiftoolCommand = if ("exiftool" in command) {
-                command.replace("exiftool", exiftoolBinary)
+        fun buildExiftoolCommand(context: Context, command: ArrayList<String>): ArrayList<String> {
+            val exiftoolCommand = if (command[0] == "exiftool") {
+                arrayListOf(getExiftoolPath(context), *command.subList(1, command.size).toTypedArray())
             } else {
-                "$exiftoolBinary $command"
+                arrayListOf(getExiftoolPath(context), *command.toTypedArray())
             }
 
-            return runPerlCommand(context, exiftoolCommand)
+            return buildPerlCommand(context, exiftoolCommand)
         }
 
-        suspend fun runPerlCommand(context: Context, userCommand: String): String {
-            return withContext(Dispatchers.Default) {
-                val filesDirPath = FileUtils.getFilesInstallDir(context)
-                val perlBinary = "$filesDirPath/perl/bin/perl"
-                val perlLibDirectory = "$filesDirPath/perl/lib/perl5/5.22.1"
-
-                val fullCommand = listOf(perlBinary, "-I", perlLibDirectory, userCommand, "2>&1")
-//                return@withContext fullCommand
-
-                val processBuilder = ProcessBuilder(fullCommand)
-//            processBuilder.environment()["PERL5LIB"] = context.getFilesDir().getAbsolutePath() + "/perl/lib/";
-                val process = processBuilder.start()
-                process.waitFor()
-
-                val stdout = process.inputStream.bufferedReader().use(BufferedReader::readText)
-
-                process.destroy()
-
-                return@withContext stdout
-            }
+        fun buildPerlCommand(context: Context, userCommand: ArrayList<String>) : ArrayList<String> {
+            val perlCommand = arrayListOf(getPerlPath(context), "-I", getPerlLibPath(context))
+            perlCommand.addAll(userCommand)
+            return perlCommand
         }
+
     }
 }

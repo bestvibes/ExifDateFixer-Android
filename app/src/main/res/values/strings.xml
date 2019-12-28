@@ -1,3 +1,27 @@
 <resources>
     <string name="app_name">ExifDateFixer</string>
+    <string name="file_list_header">Selected files:</string>
+    <string name="status_header">Status:</string>
+    <string name="status_no_files">No files selected!</string>
+    <string name="status_not_implemented">Command not implemented!</string>
+    <string name="status_select_option">Select a command option!</string>
+    <string name="status_ready">Ready!</string>
+    <string name="status_installing">Installing Perl and exiftool…</string>
+    <string name="status_running">Running exiftool…</string>
+    <string name="status_error">Error!</string>
+    <string name="status_succeeded">Succeeded!</string>
+    <string name="command_header">Command:</string>
+    <string name="command_template">exiftool %s {images}</string>
+    <string name="output_header">Output:</string>
+    <string name="command_option_info">Get image metadata</string>
+    <string name="command_option_check_date">Check EXIF date</string>
+    <string name="command_option_modified">Set EXIF date from time modified</string>
+    <string name="command_option_filename">Set EXIF date from filename</string>
+    <string name="command_option_custom">Custom exiftool flags: </string>
+    <string name="button_choose_files">Choose File(s)</string>
+    <string name="button_run">Run</string>
+
+    <string name="perl_path">perl/bin/perl</string>
+    <string name="perl_lib_path">perl/lib/perl5/5.22.1</string>
+    <string name="exiftool_path">exiftool/exiftool</string>
 </resources>

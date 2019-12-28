@@ -12,7 +12,6 @@ class FileUtils {
     companion object {
         fun getFilesInstallDir(context: Context) : String {
             return context.filesDir.absolutePath
-//            return Environment.getExternalStorageDirectory().absolutePath + "/AOKPDelta"
         }
 
         fun chmod(path: String, mode: Int): Int {
