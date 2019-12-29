@@ -1,6 +1,7 @@
 package me.bestvibes.exifdatefixer
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -9,14 +10,13 @@ import android.os.Bundle
 import android.os.Environment
 import android.text.method.ScrollingMovementMethod
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
-import android.widget.Button
-import android.widget.RadioGroup
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.widget.doOnTextChanged
 import kotlinx.coroutines.*
 import java.io.IOException
 
@@ -25,24 +25,24 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     private val PERMS_RETURN: Int = 12345
     private val FILE_PICK_INTENT: Int = 12346
+    private val DIR_PICK_INTENT: Int = 12347
 
     private lateinit var fileListText: TextView
     private lateinit var statusText: TextView
     private lateinit var commandText: TextView
     private lateinit var outputText: TextView
     private lateinit var commandOptions: RadioGroup
+    private lateinit var customCommandValue: EditText
     private lateinit var filePickerButton: Button
+    private lateinit var dirPickerButton: Button
     private lateinit var runButton: Button
 
     private var perlCommand: ArrayList<String> = arrayListOf()
     private var selectedFiles: ArrayList<String> = arrayListOf()
+    private var dirSelected = false
+    private var selectedDir: String = ""
 
-    private val implementedOptions = listOf(
-        R.id.command_option_info,
-        R.id.command_option_check_date,
-        R.id.command_option_filename,
-        R.id.command_option_modified)
-
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -52,7 +52,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         commandText = findViewById(R.id.command_text)
         outputText = findViewById(R.id.output_text)
         commandOptions = findViewById(R.id.command_options)
+        customCommandValue = findViewById(R.id.command_option_custom_value)
         filePickerButton = findViewById(R.id.file_picker_button)
+        dirPickerButton = findViewById(R.id.dir_picker_button)
         runButton = findViewById(R.id.run_button)
 
         fileListText.movementMethod = ScrollingMovementMethod()
@@ -60,10 +62,32 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         commandText.movementMethod = ScrollingMovementMethod()
         outputText.movementMethod = ScrollingMovementMethod()
 
-        updateRunButtonVisibility()
+        // To allow nested scrolling
+        val scrollTouchListener = { v: View, event: MotionEvent ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                v.parent.requestDisallowInterceptTouchEvent(true)
+            }
+            if (event.action == MotionEvent.ACTION_UP) {
+                v.parent.requestDisallowInterceptTouchEvent(false)
+            }
+
+            false
+        }
+
+        fileListText.setOnTouchListener(scrollTouchListener)
+        commandText.setOnTouchListener(scrollTouchListener)
+        outputText.setOnTouchListener(scrollTouchListener)
+
+        refreshUI()
+
+        customCommandValue.doOnTextChanged { _, _, _, _ ->  onCommandOptionSelected(null)}
 
         filePickerButton.setOnClickListener {
             startActivityForResult(FileUtils.makeImagePickerIntent(), FILE_PICK_INTENT)
+        }
+
+        dirPickerButton.setOnClickListener {
+            startActivityForResult(FileUtils.makeDirectoryPickerIntent(), DIR_PICK_INTENT)
         }
 
         runButton.setOnClickListener {
@@ -90,20 +114,34 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun requestPermissions() {
-        if (ContextCompat.checkSelfPermission(this,
-                        Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED ||
-                ContextCompat.checkSelfPermission(this,
-                        Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
 
-            ActivityCompat.requestPermissions(this,
-                    arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE),
-                    PERMS_RETURN)
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(
+                    Manifest.permission.READ_EXTERNAL_STORAGE,
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                ),
+                PERMS_RETURN
+            )
         }
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         if (requestCode == PERMS_RETURN) {
             if (grantResults[0] == PackageManager.PERMISSION_DENIED) {
                 Toast.makeText(this, "File permissions denied!", Toast.LENGTH_LONG).show()
@@ -130,6 +168,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             } else {
                 updateSelectedFiles(arrayListOf())
             }
+        } else if (requestCode == DIR_PICK_INTENT) {
+            updateSelectedDir(FileUtils.getDirectoryPathFromUri(this, data!!.data!!))
         }
     }
 
@@ -137,45 +177,47 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         updateStatus()
         updateRunButtonVisibility()
         outputText.text = ""
+        customCommandValue.isEnabled =
+            commandOptions.checkedRadioButtonId == R.id.command_option_custom
     }
 
     private fun lockControls() {
         filePickerButton.isEnabled = false
+        dirPickerButton.isEnabled = false
         runButton.isEnabled = false
         commandOptions.isEnabled = false
+        customCommandValue.isEnabled = false
     }
 
     private fun unlockControls() {
         filePickerButton.isEnabled = true
+        dirPickerButton.isEnabled = true
         runButton.isEnabled = true
         commandOptions.isEnabled = true
+        customCommandValue.isEnabled = true
+    }
+
+    private fun isTargetSelected(): Boolean {
+        return (!dirSelected && selectedFiles.size > 0) || (dirSelected && selectedDir.isNotBlank())
     }
 
     private fun updateRunButtonVisibility() {
-        val filesSelected = selectedFiles.size > 0
         val optionSelected = commandOptions.checkedRadioButtonId != -1
-        val validOptionSelected = commandOptions.checkedRadioButtonId in implementedOptions
 
-        val runButtonVisibility = if (!filesSelected || !optionSelected || !validOptionSelected) {
+        runButton.visibility = if (!isTargetSelected() || !optionSelected) {
             View.GONE
         } else {
             View.VISIBLE
         }
-
-        runButton.visibility = runButtonVisibility
     }
 
     private fun updateStatus() {
-        val filesSelected = selectedFiles.size > 0
         val optionSelected = commandOptions.checkedRadioButtonId != -1
-        val validOptionSelected = commandOptions.checkedRadioButtonId in implementedOptions
 
-        val statusStringId = if (!filesSelected) {
+        val statusStringId = if (!isTargetSelected()) {
             R.string.status_no_files
-        } else if (!optionSelected){
+        } else if (!optionSelected) {
             R.string.status_select_option
-        } else if (!validOptionSelected) {
-            R.string.status_not_implemented
         } else {
             R.string.status_ready
         }
@@ -184,25 +226,39 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun updateSelectedFiles(newFiles: ArrayList<String>) {
+        dirSelected = false
         selectedFiles = newFiles
         fileListText.text = selectedFiles.joinToString("\n")
         refreshUI()
         generateAndShowPerlCommand()
     }
 
+    private fun updateSelectedDir(newDir: String) {
+        dirSelected = true
+        selectedDir = newDir
+        fileListText.text = selectedDir
+        refreshUI()
+        generateAndShowPerlCommand()
+    }
+
     private fun generateAndShowPerlCommand() {
-        if (selectedFiles.size == 0) {
+        if (!isTargetSelected()) {
             return
         }
 
         val exiftoolArgs = arrayListOf<String>()
 
-        val flags = when (commandOptions.checkedRadioButtonId) {
+        var flags = when (commandOptions.checkedRadioButtonId) {
             R.id.command_option_info -> ""
             R.id.command_option_check_date -> "-datetimeoriginal"
             R.id.command_option_filename -> "-datetimeoriginal<filename -overwrite_original"
             R.id.command_option_modified -> "-datetimeoriginal<filemodifydate -overwrite_original"
+            R.id.command_option_custom -> customCommandValue.text.replace(Regex("\""), "").trim()
             else -> null
+        }
+
+        if (flags != null && dirSelected) {
+            flags = "-r" + if (flags.isNotBlank())  " $flags" else ""
         }
 
         flags?.let {
@@ -214,8 +270,14 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             return
         }
 
+        // save command args without filenames to display in commands textview for user
         val displayExiftoolArgs = exiftoolArgs.toList()
-        exiftoolArgs.addAll(selectedFiles)
+
+        if (dirSelected) {
+            exiftoolArgs.add(selectedDir)
+        } else {
+            exiftoolArgs.addAll(selectedFiles)
+        }
 
         perlCommand = PerlUtils.buildExiftoolCommand(this, exiftoolArgs)
         Log.d("MainActivity", "New command: $perlCommand")
@@ -223,18 +285,21 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         commandText.text = resources.getString(R.string.command_template, exiftoolArgsString)
     }
 
-    fun onCommandOptionSelected(@Suppress("UNUSED_PARAMETER") v: View) {
+    fun onCommandOptionSelected(@Suppress("UNUSED_PARAMETER") v: View?) {
         refreshUI()
         generateAndShowPerlCommand()
     }
 
     private suspend fun runExifTool() {
         withContext(Dispatchers.Main) {
-            if (selectedFiles.size == 0) {
+            if ((!dirSelected && selectedFiles.size == 0) || (dirSelected && selectedDir.isBlank())) {
                 return@withContext
             }
 
-            if (!PerlUtils.isPerlInstalled(applicationContext) || !PerlUtils.isExiftoolInstalled(applicationContext)) {
+            if (!PerlUtils.isPerlInstalled(applicationContext) || !PerlUtils.isExiftoolInstalled(
+                    applicationContext
+                )
+            ) {
                 statusText.setText(R.string.status_installing)
                 try {
                     PerlUtils.installPerlAndExifTool(applicationContext)

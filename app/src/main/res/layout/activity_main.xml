@@ -1,169 +1,222 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:layout_weight="1.0"
     tools:context=".MainActivity">
 
-
-    <TextView
-        android:id="@+id/status_header"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/status_header"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintLeft_toLeftOf="@id/status_text"
-        app:layout_constraintBottom_toTopOf="@id/status_text" />
-
-    <TextView
-        android:id="@+id/status_text"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
-        android:text="@string/status_no_files"
-        android:background="@color/colorAccent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/status_header" />
+        android:layout_height="wrap_content">
 
-    <TextView
-        android:id="@+id/file_list_header"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/file_list_header"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/status_text"
-        app:layout_constraintLeft_toLeftOf="@id/file_list_text"
-        app:layout_constraintBottom_toTopOf="@id/file_list_text" />
-
-    <TextView
-        android:id="@+id/file_list_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
-        android:background="@color/colorAccent"
-        android:scrollbars="vertical"
-        android:maxLines="10"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/file_list_header" />
-
-    <TextView
-        android:id="@+id/command_header"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/command_header"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/file_list_text"
-        app:layout_constraintLeft_toLeftOf="@id/command_text"
-        app:layout_constraintBottom_toTopOf="@id/command_text" />
-
-    <TextView
-        android:id="@+id/command_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
-        android:background="@color/colorAccent"
-        android:scrollbars="vertical"
-        android:maxLines="10"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/command_header" />
-
-    <TextView
-        android:id="@+id/output_header"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/output_header"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/command_text"
-        app:layout_constraintLeft_toLeftOf="@id/output_text"
-        app:layout_constraintBottom_toTopOf="@id/output_text" />
-
-    <TextView
-        android:id="@+id/output_text"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        android:paddingStart="4dp"
-        android:paddingEnd="4dp"
-        android:background="@color/colorAccent"
-        android:scrollbars="vertical"
-        android:maxLines="10"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/output_header" />
-
-    <RadioGroup
-        android:id="@+id/command_options"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginEnd="12dp"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/output_text">
-        <RadioButton
-            android:id="@+id/command_option_info"
-            android:text="@string/command_option_info"
-            android:onClick="onCommandOptionSelected"
+        <TextView
+            android:id="@+id/status_header"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <RadioButton
-            android:id="@+id/command_option_check_date"
-            android:text="@string/command_option_check_date"
-            android:onClick="onCommandOptionSelected"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <RadioButton
-            android:id="@+id/command_option_modified"
-            android:text="@string/command_option_modified"
-            android:onClick="onCommandOptionSelected"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-        <RadioButton
-            android:id="@+id/command_option_filename"
-            android:text="@string/command_option_filename"
-            android:onClick="onCommandOptionSelected"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    </RadioGroup>
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/status_header"
+            app:layout_constraintBottom_toTopOf="@id/status_text"
+            app:layout_constraintLeft_toLeftOf="@id/status_text"
+            app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/file_picker_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text = "@string/button_choose_files"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/command_options"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/colorAccent"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:text="@string/status_no_files"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/status_header" />
 
-    <Button
-        android:id="@+id/run_button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text = "@string/button_run"
-        android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/file_picker_button"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent" />
+        <TextView
+            android:id="@+id/file_list_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/file_list_header"
+            app:layout_constraintBottom_toTopOf="@id/file_list_text"
+            app:layout_constraintLeft_toLeftOf="@id/file_list_text"
+            app:layout_constraintTop_toBottomOf="@id/status_text" />
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+        <TextView
+            android:id="@+id/file_list_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/colorAccent"
+            android:maxLines="5"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:scrollbars="vertical"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/file_list_header" />
+
+        <TextView
+            android:id="@+id/command_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/command_header"
+            app:layout_constraintBottom_toTopOf="@id/command_text"
+            app:layout_constraintLeft_toLeftOf="@id/command_text"
+            app:layout_constraintTop_toBottomOf="@id/file_list_text" />
+
+        <TextView
+            android:id="@+id/command_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/colorAccent"
+            android:maxLines="2"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:scrollbars="vertical"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/command_header" />
+
+        <TextView
+            android:id="@+id/output_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="@string/output_header"
+            app:layout_constraintBottom_toTopOf="@id/output_text"
+            app:layout_constraintLeft_toLeftOf="@id/output_text"
+            app:layout_constraintTop_toBottomOf="@id/command_text" />
+
+        <TextView
+            android:id="@+id/output_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:background="@color/colorAccent"
+            android:maxLines="10"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:overScrollMode="always"
+            android:scrollbarStyle="insideInset"
+            android:scrollbars="vertical"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/output_header" />
+
+        <RadioGroup
+            android:id="@+id/command_options"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="12dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/output_text">
+
+            <RadioButton
+                android:id="@+id/command_option_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onCommandOptionSelected"
+                android:text="@string/command_option_info" />
+
+            <RadioButton
+                android:id="@+id/command_option_check_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onCommandOptionSelected"
+                android:text="@string/command_option_check_date" />
+
+            <RadioButton
+                android:id="@+id/command_option_modified"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onCommandOptionSelected"
+                android:text="@string/command_option_modified" />
+
+            <RadioButton
+                android:id="@+id/command_option_filename"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onCommandOptionSelected"
+                android:text="@string/command_option_filename" />
+
+            <RadioButton
+                android:id="@+id/command_option_custom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:onClick="onCommandOptionSelected"
+                android:text="@string/command_option_custom" />
+        </RadioGroup>
+
+        <EditText
+            android:id="@+id/command_option_custom_value"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:layout_marginEnd="12dp"
+            android:autofillHints="@string/command_option_custom_hint"
+            android:enabled="false"
+            android:hint="@string/command_option_custom_hint"
+            android:inputType="text"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/command_options" />
+
+        <LinearLayout
+            android:id="@+id/file_selectors"
+            style="?android:attr/buttonBarStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginTop="16dp"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/command_option_custom_value"
+            app:layout_constraintRight_toRightOf="parent"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/file_picker_button"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_choose_files" />
+
+            <Button
+                android:id="@+id/dir_picker_button"
+                style="?android:attr/buttonBarButtonStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/button_choose_dir" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/run_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="8dp"
+            android:text="@string/button_run"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/file_selectors" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>
