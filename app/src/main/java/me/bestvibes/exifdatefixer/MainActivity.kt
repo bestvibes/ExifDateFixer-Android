@@ -8,9 +8,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.os.Environment
-import android.text.method.ScrollingMovementMethod
 import android.util.Log
-import android.view.MotionEvent
 import android.view.View
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
@@ -56,27 +54,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         filePickerButton = findViewById(R.id.file_picker_button)
         dirPickerButton = findViewById(R.id.dir_picker_button)
         runButton = findViewById(R.id.run_button)
-
-        fileListText.movementMethod = ScrollingMovementMethod()
-        statusText.movementMethod = ScrollingMovementMethod()
-        commandText.movementMethod = ScrollingMovementMethod()
-        outputText.movementMethod = ScrollingMovementMethod()
-
-        // To allow nested scrolling
-        val scrollTouchListener = { v: View, event: MotionEvent ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
-                v.parent.requestDisallowInterceptTouchEvent(true)
-            }
-            if (event.action == MotionEvent.ACTION_UP) {
-                v.parent.requestDisallowInterceptTouchEvent(false)
-            }
-
-            false
-        }
-
-        fileListText.setOnTouchListener(scrollTouchListener)
-        commandText.setOnTouchListener(scrollTouchListener)
-        outputText.setOnTouchListener(scrollTouchListener)
 
         refreshUI()
 
@@ -228,7 +205,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun updateSelectedFiles(newFiles: ArrayList<String>) {
         dirSelected = false
         selectedFiles = newFiles
-        fileListText.text = selectedFiles.joinToString("\n")
+        fileListText.text = selectedFiles.joinToString("\n", "${selectedFiles.size} FILE(S) SELECTED:\n")
         refreshUI()
         generateAndShowPerlCommand()
     }

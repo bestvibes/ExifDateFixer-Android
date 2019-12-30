@@ -113,7 +113,6 @@ class FileUtils {
                         }
                         rootPath.append(segment).append(File.separator)
                     }
-                    //rootPath.append(fileDir.getPath().split("/Android")[0]); // faster
                     break
                 }
             }

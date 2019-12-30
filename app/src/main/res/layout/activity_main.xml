@@ -10,7 +10,8 @@
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp">
 
         <TextView
             android:id="@+id/status_header"
@@ -18,6 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:text="@string/status_header"
+            android:maxLines="1"
             app:layout_constraintBottom_toTopOf="@id/status_text"
             app:layout_constraintLeft_toLeftOf="@id/status_text"
             app:layout_constraintTop_toTopOf="parent" />
@@ -42,81 +44,99 @@
             android:id="@+id/file_list_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:text="@string/file_list_header"
-            app:layout_constraintBottom_toTopOf="@id/file_list_text"
-            app:layout_constraintLeft_toLeftOf="@id/file_list_text"
+            app:layout_constraintBottom_toTopOf="@id/file_list_text_scrollview"
+            app:layout_constraintLeft_toLeftOf="@id/file_list_text_scrollview"
             app:layout_constraintTop_toBottomOf="@id/status_text" />
+
+        <me.bestvibes.exifdatefixer.MaxHeightNestedScrollView
+            android:id="@+id/file_list_text_scrollview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:maxHeight="150dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:scrollbars="vertical"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/file_list_header" >
 
         <TextView
             android:id="@+id/file_list_text"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="12dp"
+            android:layout_height="match_parent"
             android:background="@color/colorAccent"
-            android:maxLines="5"
             android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:scrollbars="vertical"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/file_list_header" />
+            android:paddingEnd="4dp" />
+
+        </me.bestvibes.exifdatefixer.MaxHeightNestedScrollView>
 
         <TextView
             android:id="@+id/command_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:text="@string/command_header"
-            app:layout_constraintBottom_toTopOf="@id/command_text"
-            app:layout_constraintLeft_toLeftOf="@id/command_text"
-            app:layout_constraintTop_toBottomOf="@id/file_list_text" />
+            app:layout_constraintBottom_toTopOf="@id/command_text_scrollview"
+            app:layout_constraintLeft_toLeftOf="@id/command_text_scrollview"
+            app:layout_constraintTop_toBottomOf="@id/file_list_text_scrollview" />
+
+        <me.bestvibes.exifdatefixer.MaxHeightNestedScrollView
+            android:id="@+id/command_text_scrollview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:maxHeight="50dp"
+            android:layout_marginStart="12dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="12dp"
+            android:scrollbars="vertical"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/command_header" >
 
         <TextView
             android:id="@+id/command_text"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="12dp"
+            android:layout_height="match_parent"
             android:background="@color/colorAccent"
-            android:maxLines="2"
             android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:scrollbars="vertical"
-            app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/command_header" />
+            android:paddingEnd="4dp" />
+        </me.bestvibes.exifdatefixer.MaxHeightNestedScrollView>
 
         <TextView
             android:id="@+id/output_header"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="12dp"
             android:text="@string/output_header"
-            app:layout_constraintBottom_toTopOf="@id/output_text"
-            app:layout_constraintLeft_toLeftOf="@id/output_text"
-            app:layout_constraintTop_toBottomOf="@id/command_text" />
+            app:layout_constraintBottom_toTopOf="@id/output_text_scrollview"
+            app:layout_constraintLeft_toLeftOf="@id/output_text_scrollview"
+            app:layout_constraintTop_toBottomOf="@id/command_text_scrollview" />
 
-        <TextView
-            android:id="@+id/output_text"
+        <me.bestvibes.exifdatefixer.MaxHeightNestedScrollView
+            android:id="@+id/output_text_scrollview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            app:maxHeight="250dp"
             android:layout_marginStart="12dp"
             android:layout_marginTop="4dp"
             android:layout_marginEnd="12dp"
-            android:background="@color/colorAccent"
-            android:maxLines="10"
-            android:paddingStart="4dp"
-            android:paddingEnd="4dp"
-            android:overScrollMode="always"
-            android:scrollbarStyle="insideInset"
             android:scrollbars="vertical"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/output_header" />
+            app:layout_constraintTop_toBottomOf="@id/output_header" >
+
+            <TextView
+                android:id="@+id/output_text"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/colorAccent"
+                android:paddingStart="4dp"
+                android:paddingEnd="4dp" />
+
+        </me.bestvibes.exifdatefixer.MaxHeightNestedScrollView>
 
         <RadioGroup
             android:id="@+id/command_options"
@@ -126,7 +146,7 @@
             android:layout_marginTop="16dp"
             android:layout_marginEnd="12dp"
             app:layout_constraintLeft_toLeftOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/output_text">
+            app:layout_constraintTop_toBottomOf="@id/output_text_scrollview">
 
             <RadioButton
                 android:id="@+id/command_option_info"
@@ -184,7 +204,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="8dp"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintTop_toBottomOf="@id/command_option_custom_value"
             app:layout_constraintRight_toRightOf="parent"
@@ -211,7 +231,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:layout_marginBottom="8dp"
             android:text="@string/button_run"
             app:layout_constraintLeft_toLeftOf="parent"
             app:layout_constraintRight_toRightOf="parent"
