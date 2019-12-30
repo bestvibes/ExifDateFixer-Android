@@ -162,7 +162,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         filePickerButton.isEnabled = false
         dirPickerButton.isEnabled = false
         runButton.isEnabled = false
-        commandOptions.isEnabled = false
+        for (i in 0 until commandOptions.childCount) {
+            commandOptions.getChildAt(i).isEnabled = false
+        }
         customCommandValue.isEnabled = false
     }
 
@@ -170,7 +172,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         filePickerButton.isEnabled = true
         dirPickerButton.isEnabled = true
         runButton.isEnabled = true
-        commandOptions.isEnabled = true
+        for (i in 0 until commandOptions.childCount) {
+            commandOptions.getChildAt(i).isEnabled = true
+        }
         customCommandValue.isEnabled = true
     }
 
