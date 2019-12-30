@@ -1,4 +1,4 @@
-# ExifDateFixer
+# ExifDateFixer-Android
 An Android app that runs [exiftool](https://exiftool.org/) using a cross-compiled version of Perl for Android. This can be used to run exiftool in batch on images or directories directly on your phone.
 
 The primary motivation for this was that on my Google Pixel 2 XL, screenshots and images saved from Snapchat don't come with EXIF timestamps embedded in them. The Google Photos app on Android only looks for an EXIF timestamp to determine the time the image was taken, and uses the time of upload as a fallback, ignoring the file creation/modification timestamp.
