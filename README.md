@@ -5,6 +5,8 @@ The primary motivation for this was that on my Google Pixel 2 XL, screenshots an
 
 With this app, I can select all my screenshots and Snapchat images, and embed EXIF timestamps in them based on either their filenames (Android screenshots store the timestamp in the filename) or file modification date (used for Snapchat images). This way Google Photos can pick up the time the images were actually taken and my memories can be preserved. There is also an option to use custom flags for exiftool in case the default options I've provided don't suffice.
 
+<img src="screenshot.png" alt="Screenshot" width="500" />
+
 ## Usage
 
 [A debug APK](ExifDateFixer-debug.apk) is provided for convenience. Feel free to install it and give it a shot. All this app requires is permissions to access your files.
