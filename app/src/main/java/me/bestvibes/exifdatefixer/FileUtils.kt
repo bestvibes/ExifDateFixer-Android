@@ -45,23 +45,40 @@ class FileUtils {
         }
 
         fun convertUrisToFilePaths(
-            contentResolver: ContentResolver,
+            context: Context,
             uris: ArrayList<Uri>
         ): ArrayList<String> {
             val res = arrayListOf<String>()
 
-            val filePathColumn = arrayOf(MediaStore.Images.Media.DATA)
             for (selectedUri in uris) {
-                contentResolver.query(
-                    selectedUri,
-                    filePathColumn,
-                    null,
-                    null,
-                    null
-                )?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val imageColumnIndex = cursor.getColumnIndex(filePathColumn[0])
-                        res.add(cursor.getString(imageColumnIndex))
+                if ("file" == selectedUri.scheme) {
+                    selectedUri.path?.let { res.add(it) }
+                    continue
+                }
+
+                if ("content" == selectedUri.scheme) {
+                    var path: String? = null
+                    try {
+                        context.contentResolver.query(
+                            selectedUri,
+                            arrayOf(MediaStore.Images.Media.DATA),
+                            null,
+                            null,
+                            null
+                        )?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                val imageColumnIndex = cursor.getColumnIndex(MediaStore.Images.Media.DATA)
+                                if (imageColumnIndex != -1) {
+                                    path = cursor.getString(imageColumnIndex)
+                                }
+                            }
+                        }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+
+                    if (path != null) {
+                        res.add(path!!)
                     }
                 }
             }

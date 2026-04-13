@@ -23,6 +23,6 @@
     <string name="button_run">Run</string>
 
     <string name="perl_path">perl/bin/perl</string>
-    <string name="perl_lib_path">perl/lib/perl5/5.22.1</string>
+    <string name="perl_lib_path">perl/lib</string>
     <string name="exiftool_path">exiftool/exiftool</string>
 </resources>

@@ -78,6 +78,45 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         Log.d("MainActivity", "Files: ${FileUtils.getFilesInstallDir(this)}")
         Log.d("MainActivity", "ABI: ${PerlUtils.getAbiToUse()}")
         Log.d("MainActivity", "External: ${Environment.getExternalStorageDirectory()}")
+
+        handleIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        Log.d("MainActivity", "onNewIntent action: ${intent?.action}")
+        if (intent != null) {
+            handleIntent(intent)
+        }
+    }
+
+    private fun handleIntent(intent: Intent) {
+        Log.d("MainActivity", "handleIntent action: ${intent.action}")
+        if (intent.action == Intent.ACTION_SEND) {
+            val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
+            Log.d("MainActivity", "ACTION_SEND uri: $uri")
+            if (uri != null) {
+                updateSelectedFiles(FileUtils.convertUrisToFilePaths(this, arrayListOf(uri)))
+                launch {
+                    Log.d("MainActivity", "Launching runExifTool for ACTION_SEND")
+                    lockControls()
+                    runExifTool()
+                    unlockControls()
+                }
+            }
+        } else if (intent.action == Intent.ACTION_SEND_MULTIPLE) {
+            val uris = intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+            Log.d("MainActivity", "ACTION_SEND_MULTIPLE uris count: ${uris?.size}")
+            if (uris != null) {
+                updateSelectedFiles(FileUtils.convertUrisToFilePaths(this, ArrayList(uris)))
+                launch {
+                    Log.d("MainActivity", "Launching runExifTool for ACTION_SEND_MULTIPLE")
+                    lockControls()
+                    runExifTool()
+                    unlockControls()
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -141,7 +180,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                     }
                 }
 
-                updateSelectedFiles(FileUtils.convertUrisToFilePaths(contentResolver, uris))
+                updateSelectedFiles(FileUtils.convertUrisToFilePaths(this, uris))
             } else {
                 updateSelectedFiles(arrayListOf())
             }
@@ -229,6 +268,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
         val exiftoolArgs = arrayListOf<String>()
 
+        if (commandOptions.checkedRadioButtonId == -1) {
+            commandOptions.check(R.id.command_option_info)
+        }
+
         var flags = when (commandOptions.checkedRadioButtonId) {
             R.id.command_option_info -> ""
             R.id.command_option_check_date -> "-datetimeoriginal"
@@ -294,7 +337,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             var error = false
             statusText.setText(R.string.status_running)
             val commandOutput = try {
-                ProcessUtils.runCommand(perlCommand)
+                ProcessUtils.runCommand(perlCommand, mapOf("LD_LIBRARY_PATH" to PerlUtils.getPerlBinDir(applicationContext)))
             } catch (e: Exception) {
                 error = true
                 e.toString()

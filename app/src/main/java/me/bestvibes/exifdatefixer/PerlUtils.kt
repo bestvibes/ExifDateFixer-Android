@@ -98,8 +98,13 @@ class PerlUtils {
             return buildPerlCommand(context, exiftoolCommand)
         }
 
+        fun getPerlBinDir(context: Context): String {
+            val perlPath = getPerlPath(context)
+            return File(perlPath).parent!!
+        }
+
         fun buildPerlCommand(context: Context, userCommand: ArrayList<String>) : ArrayList<String> {
-            val perlCommand = arrayListOf(getPerlPath(context), "-I", getPerlLibPath(context))
+            val perlCommand = arrayListOf(getPerlPath(context), "-I", getPerlLibPath(context), "-I", "${getExiftoolPath(context).substringBeforeLast("/")}/lib")
             perlCommand.addAll(userCommand)
             return perlCommand
         }
