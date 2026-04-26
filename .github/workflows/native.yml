@@ -169,6 +169,10 @@ jobs:
           done
           mkdir -p app/src/main/assets
           cp artifacts/perl5-assets/perl5.tar app/src/main/assets/perl5.tar
+          # Drop the download dir so create-pull-request doesn't sweep it
+          # into the PR. We only want the in-tree app/src/main/jniLibs +
+          # assets to change.
+          rm -rf artifacts
 
       - name: Open PR
         uses: peter-evans/create-pull-request@v6
