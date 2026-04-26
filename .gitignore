@@ -83,3 +83,20 @@ lint/generated/
 lint/outputs/
 lint/tmp/
 # lint/reports/
+
+# Native build pipeline (outputs are committed via CI to app/src/main/{jniLibs,assets})
+native/src/
+native/build/
+native/out/
+
+# Force-include the .so files committed under jniLibs/ — these are produced by
+# native/build.sh and are intentionally tracked. A user-level .gitignore that
+# blanket-excludes *.so would otherwise drop them.
+!app/src/main/jniLibs/**/*.so
+
+# Old debug APK shipped in the original repo — no longer relevant
+ExifDateFixer-debug.apk
+
+# Local agent state
+.claude/
+
