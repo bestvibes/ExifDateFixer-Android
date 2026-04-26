@@ -5,8 +5,9 @@
     <string name="status_no_files">No files or directory selected!</string>
     <string name="status_select_option">Select a command option!</string>
     <string name="status_ready">Ready!</string>
-    <string name="status_installing">Installing Perl and exiftool…</string>
+    <string name="status_installing">Extracting exiftool…</string>
     <string name="status_running">Running exiftool…</string>
+    <string name="status_request_write">Requesting permission to modify selected file(s)…</string>
     <string name="status_error">Error!</string>
     <string name="status_succeeded">Succeeded!</string>
     <string name="command_header">Command:</string>
@@ -16,13 +17,18 @@
     <string name="command_option_check_date">Check EXIF date</string>
     <string name="command_option_modified">Set EXIF date from time modified</string>
     <string name="command_option_filename">Set EXIF date from filename</string>
-    <string name="command_option_custom">Custom exiftool flags: </string>
+    <string name="command_option_custom">Custom exiftool flags (advanced):</string>
     <string name="command_option_custom_hint">Custom flags</string>
     <string name="button_choose_files">Choose File(s)</string>
     <string name="button_choose_dir">Choose Directory</string>
     <string name="button_run">Run</string>
 
-    <string name="perl_path">perl/bin/perl</string>
-    <string name="perl_lib_path">perl/lib/perl5/5.22.1</string>
-    <string name="exiftool_path">exiftool/exiftool</string>
+    <string name="disclaimer_title">Before you continue</string>
+    <string name="disclaimer_accept">I understand</string>
+    <string name="disclaimer_decline">Quit</string>
+
+    <string name="advanced_warning_title">Advanced custom commands</string>
+    <string name="advanced_warning_message">The custom command field passes your input directly to exiftool. The app blocks a small set of flags that load arbitrary code (such as -config and -@), but is otherwise unrestricted. You are solely responsible for what you run, including any files it modifies or destroys. Make a backup before running custom commands against files you care about.</string>
+    <string name="advanced_warning_accept">Enable advanced mode</string>
+    <string name="advanced_warning_decline">Cancel</string>
 </resources>

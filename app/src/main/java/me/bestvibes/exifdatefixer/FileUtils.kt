@@ -1,14 +1,11 @@
 package me.bestvibes.exifdatefixer
 
-import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
-import android.provider.MediaStore
 import androidx.core.content.ContextCompat
 import java.io.File
-import java.lang.reflect.Method
 
 
 class FileUtils {
@@ -17,56 +14,22 @@ class FileUtils {
         private const val PRIMARY_TYPE = "primary"
         private const val RAW_TYPE = "raw"
 
-        fun getFilesInstallDir(context: Context): String {
-            return context.filesDir.absolutePath
-        }
-
-        fun chmod(path: String, mode: Int): Int {
-            val fileUtils = Class.forName("android.os.FileUtils")
-            val setPermissions: Method = fileUtils.getMethod(
-                "setPermissions",
-                String::class.java,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType,
-                Int::class.javaPrimitiveType
-            )
-            return setPermissions.invoke(null, path, mode, -1, -1) as Int
-        }
-
         fun makeImagePickerIntent(): Intent {
-            val i = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-            i.type = "image/*"
-            i.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-            return i
+            // ACTION_OPEN_DOCUMENT (not ACTION_PICK) so the URIs come back with
+            // FLAG_GRANT_READ_URI_PERMISSION + FLAG_GRANT_WRITE_URI_PERMISSION.
+            // ACTION_PICK on modern Android returns Photo Picker URIs that are
+            // read-only and not writeable via createWriteRequest, which forces
+            // a separate permission dance for write modes; ACTION_OPEN_DOCUMENT
+            // gives a unified read+write URI in a single picker.
+            return Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+                putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            }
         }
 
         fun makeDirectoryPickerIntent(): Intent {
             return Intent(Intent.ACTION_OPEN_DOCUMENT_TREE)
-        }
-
-        fun convertUrisToFilePaths(
-            contentResolver: ContentResolver,
-            uris: ArrayList<Uri>
-        ): ArrayList<String> {
-            val res = arrayListOf<String>()
-
-            val filePathColumn = arrayOf(MediaStore.Images.Media.DATA)
-            for (selectedUri in uris) {
-                contentResolver.query(
-                    selectedUri,
-                    filePathColumn,
-                    null,
-                    null,
-                    null
-                )?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                        val imageColumnIndex = cursor.getColumnIndex(filePathColumn[0])
-                        res.add(cursor.getString(imageColumnIndex))
-                    }
-                }
-            }
-
-            return res
         }
 
         @Throws(java.lang.IllegalArgumentException::class)
