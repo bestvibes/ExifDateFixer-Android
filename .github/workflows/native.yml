@@ -1,0 +1,190 @@
+name: native build (perl + exiftool)
+
+on:
+  push:
+    tags:
+      - 'native-v*'
+  workflow_dispatch:
+    inputs:
+      open_pr:
+        description: 'Open a PR updating the in-tree binaries'
+        required: false
+        default: 'true'
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+  pull-requests: write
+
+jobs:
+  lint-shell:
+    name: shell-syntax-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # The docker-build.sh wrapper isn't run by CI (it's a local-dev convenience
+      # for macOS hosts, where APFS case-insensitivity breaks the naive container
+      # → host cp). A bash -n syntax check catches typos that would otherwise
+      # only surface when the next macOS dev tried to use it.
+      - run: bash -n native/build.sh native/docker-build.sh
+
+  build-perl:
+    name: build libperl.so (${{ matrix.abi }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64, x86]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - name: Load pins
+        id: pins
+        run: |
+          set -euo pipefail
+          . native/PINS
+          {
+            echo "perl_cross_tag=${PERL_CROSS_TAG}"
+            echo "ndk_version=${NDK_VERSION}"
+            echo "perl_version=${PERL_VERSION}"
+            echo "exiftool_version=${EXIFTOOL_VERSION}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Check out perl-cross at pinned tag
+        run: |
+          git clone --depth 1 --branch "${{ steps.pins.outputs.perl_cross_tag }}" \
+              https://github.com/arsv/perl-cross.git native/perl-cross
+
+      - name: Install host tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends gpg curl tar make patch xz-utils
+
+      - name: Set up Android NDK ${{ steps.pins.outputs.ndk_version }}
+        id: ndk
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: ${{ steps.pins.outputs.ndk_version }}
+
+      - name: Build libperl.so for ${{ matrix.abi }}
+        env:
+          ANDROID_NDK_HOME: ${{ steps.ndk.outputs.ndk-path }}
+          SOURCE_DATE_EPOCH: '1735689600'
+        run: native/build.sh ${{ matrix.abi }}
+
+      - name: Record SHAs
+        run: |
+          sha=$(shasum -a 256 native/out/${{ matrix.abi }}/libperl.so | awk '{print $1}')
+          xs_count=$(find native/out/${{ matrix.abi }}/jniLibs -name '*.so' | wc -l)
+          echo "::notice title=libperl.so ${{ matrix.abi }}::SHA256 ${sha} (+${xs_count} XS .so)"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jniLibs-${{ matrix.abi }}
+          # Upload libperl.so + every libperl_xs_*.so as a single bundle that
+          # maps 1:1 to app/src/main/jniLibs/<abi>/.
+          path: |
+            native/out/${{ matrix.abi }}/libperl.so
+            native/out/${{ matrix.abi }}/jniLibs/lib*.so
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: |
+            native/out/${{ matrix.abi }}/libperl.so
+            native/out/${{ matrix.abi }}/jniLibs/lib*.so
+
+      # The per-ABI install tree carries the .pm @INC layout that build_assets
+      # needs. The .pm files are arch-independent so any ABI's tree works as
+      # the assets source — we use arm64-v8a by convention.
+      - uses: actions/upload-artifact@v4
+        if: matrix.abi == 'arm64-v8a'
+        with:
+          name: perl5-tree-arm64-v8a
+          path: native/out/arm64-v8a/perl5/**
+          if-no-files-found: error
+          retention-days: 7
+
+  build-assets:
+    name: build perl5.tar (exiftool + pure-perl @INC)
+    needs: build-perl
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install host tools
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends curl tar
+
+      - name: Restore arm64 perl install tree (source for the @INC bundle)
+        uses: actions/download-artifact@v4
+        with:
+          name: perl5-tree-arm64-v8a
+          path: native/out/arm64-v8a/perl5
+
+      - name: Build assets/perl5.tar
+        env:
+          SOURCE_DATE_EPOCH: '1735689600'
+        run: native/build.sh assets
+
+      - name: Record SHA256
+        run: |
+          sha=$(shasum -a 256 native/out/assets/perl5.tar | awk '{print $1}')
+          echo "::notice title=perl5.tar::SHA256 ${sha}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: perl5-assets
+          path: native/out/assets/perl5.tar
+          if-no-files-found: error
+          retention-days: 30
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: native/out/assets/perl5.tar
+
+  open-pr:
+    name: open PR with rebuilt binaries
+    needs: [build-perl, build-assets]
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.open_pr == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Install rebuilt binaries into the app tree
+        run: |
+          set -euo pipefail
+          for abi in arm64-v8a armeabi-v7a x86_64 x86; do
+            rm -rf "app/src/main/jniLibs/${abi}"
+            mkdir -p "app/src/main/jniLibs/${abi}"
+            # Each artifact bundle contains: libperl.so at the artifact root
+            # (from native/out/<abi>/) plus jniLibs/lib*.so (the XS .so files).
+            cp "artifacts/jniLibs-${abi}/libperl.so" "app/src/main/jniLibs/${abi}/"
+            cp artifacts/jniLibs-${abi}/jniLibs/lib*.so "app/src/main/jniLibs/${abi}/"
+          done
+          mkdir -p app/src/main/assets
+          cp artifacts/perl5-assets/perl5.tar app/src/main/assets/perl5.tar
+
+      - name: Open PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: native-binaries-update
+          delete-branch: true
+          commit-message: |
+            chore(native): refresh libperl.so + perl5.tar from CI
+
+            Built reproducibly by .github/workflows/native.yml from versions
+            pinned in native/PINS.
+          title: "chore(native): refresh perl + exiftool binaries"
+          body: |
+            Automated update from `.github/workflows/native.yml`.
+
+            All binaries built reproducibly with `SOURCE_DATE_EPOCH=1735689600`
+            from the upstream sources pinned in `native/PINS`. SLSA provenance
+            attestations are attached to the workflow run; the SHA256s in those
+            attestations should match the bytes in this PR.
