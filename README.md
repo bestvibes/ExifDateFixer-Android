@@ -1,20 +1,103 @@
 # ExifDateFixer-Android
-An Android app that runs [exiftool](https://exiftool.org/) using a cross-compiled version of Perl for Android. This can be used to run exiftool in batch on images or directories directly on your phone.
 
-The primary motivation for this was that on my Google Pixel 2 XL, screenshots and images saved from Snapchat don't come with EXIF timestamps embedded in them. The Google Photos app on Android only looks for an EXIF timestamp to determine the time the image was taken, and uses the time of upload as a fallback, ignoring the file creation/modification timestamp.
+An Android app that runs [ExifTool](https://exiftool.org/) on-device using a
+Perl interpreter cross-compiled for Android. Useful for batch-fixing EXIF
+timestamps on screenshots, social-media downloads, and other images that
+arrive without proper metadata.
 
-With this app, I can select all my screenshots and Snapchat images, and embed EXIF timestamps in them based on either their filenames (Android screenshots store the timestamp in the filename) or file modification date (used for Snapchat images). This way Google Photos can pick up the time the images were actually taken and my memories can be preserved. There is also an option to use custom flags for exiftool in case the default options I've provided don't suffice.
+The original motivation: on Pixel devices, screenshots and Snapchat images
+arrive without EXIF timestamps, and Google Photos uses upload time as a
+fallback rather than file modification time. This app embeds EXIF
+`DateTimeOriginal` from either the filename (Android screenshots) or the
+file modification date (Snapchat etc.) so Google Photos sorts them
+correctly.
+
+There is also an "advanced custom command" mode for arbitrary exiftool flags
+when the presets aren't enough.
 
 <img src="screenshot.png" alt="Screenshot" width="500" />
 
+## Disclaimer
+
+This app modifies — and in some modes overwrites — your photo files. **Make
+backups.** See [`DISCLAIMER.md`](./DISCLAIMER.md) for the full warranty /
+liability disclaimer; the app shows a condensed version on first launch
+and again before enabling advanced mode.
+
 ## Usage
 
-[A debug APK](ExifDateFixer-debug.apk) is provided for convenience. Feel free to install it and give it a shot. All this app requires is permissions to access your files.
+Install the latest release APK from GitHub, grant the storage permission on
+first launch, and pick files or a directory.
 
-You can also check this repo out and build it yourself if you'd like, no special bells or whistles are required.
+## Reproducible native build
 
-## Implementation
+Earlier versions of this app committed pre-built `perl_*.xz` and
+`exiftool.xz` blobs straight into `app/src/main/res/raw/`. Those blobs had no
+provenance and no update path, which was both a security concern and the
+reason ExifTool was stuck at a 7-year-old release
+([#2](https://github.com/bestvibes/ExifDateFixer/issues/2)).
 
-The implementation was inspired by [ru.al.exiftool](https://apkpure.com/exiftool/ru.al.exiftool). The project packages exiftool and cross-compiled versions of Perl for arm and x86 (PIE only since I don't care about supporting below Android 5.0). It will determine the Perl version required, and extract that along with exiftool to its files directory under /data. It will set appropriate permissions for the executables and run exiftool for you at your command!
+The current build pipeline replaces that with:
 
-I've tried to make the UI as flexible as possible so I will never need to come back to this code to add new functionality by adding support for custom commands. The only reason I hope to need to come back is to add more frequently-used commands as easy one-click options.
+- [`native/PINS`](./native/PINS) — exact pinned versions and SHA256s for
+  perl, ExifTool, perl-cross, and the Android NDK.
+- [`native/build.sh`](./native/build.sh) — cross-builds perl with
+  perl-cross in the standard configuration (DynaLoader enabled), runs
+  `make install` to a staging tree, then renames the perl interpreter to
+  `libperl.so` and each XS module to `libperl_xs_<flat_name>.so` so
+  Android's installer ships them all via the standard `jniLibs`
+  mechanism.
+- [`.github/workflows/native.yml`](./.github/workflows/native.yml) — builds
+  all four ABIs (`arm64-v8a`, `armeabi-v7a`, `x86_64`, `x86`) reproducibly
+  on GitHub Actions, attaches SLSA build-provenance attestations, and opens
+  a PR updating the in-tree binaries.
+
+To verify a release:
+
+1. Pull the APK and SHA256 the embedded `lib/<abi>/libperl.so` and any
+   `lib/<abi>/libperl_xs_*.so`.
+2. Compare against the SHA256s in the SLSA attestation attached to the
+   matching `native-v*` GitHub release.
+3. Compare against the bytes committed at
+   `app/src/main/jniLibs/<abi>/lib*.so` in this repository.
+
+All three should match. See [`native/README.md`](./native/README.md) for the
+longer explanation of how the chain works.
+
+## Runtime architecture
+
+- `libperl.so` (the perl interpreter) and `libperl_xs_*.so` (one per XS
+  module: `POSIX`, `Compress::Raw::Zlib`, `IO::Compress::*`, etc.) all live
+  under `applicationInfo.nativeLibraryDir`, an exec mount populated by
+  Android's installer at install time. No `chmod` needed; no W^X violation.
+- `assets/perl5.tar` (the ExifTool script + `Image::ExifTool/` lib tree +
+  perl's pure-perl `@INC`) is extracted to `filesDir/perl5/` on first
+  launch via [`AssetExtractor`](./app/src/main/java/me/bestvibes/exifdatefixer/AssetExtractor.kt).
+  `AssetExtractor` also creates symlinks at
+  `filesDir/perl5/arch/auto/<dist>/<dist>.so` pointing to the matching
+  `nativeLibraryDir/libperl_xs_*.so`, so perl's `DynaLoader` finds each XS
+  module at the canonical archlib path. The symlinks are recreated on
+  every launch because Android randomizes `nativeLibraryDir` across
+  app installs.
+- Every invocation is
+  `ProcessBuilder(libperl.so, -I arch, -I lib, exiftool, …)` — argv list,
+  no shell, no string interpolation.
+- File handling: SAF picker URIs are copied to a per-run cache subdir
+  (preserving the original filename, since some exiftool modes parse it),
+  exiftool reads/writes the cache copy, and for write modes the result is
+  copied back to the source URI via `openOutputStream("wt")`. The picker
+  uses `ACTION_OPEN_DOCUMENT` so URIs come back with both read and write
+  permission grants in one step.
+- The custom-command field is sanitized by
+  [`CommandSanitizer`](./app/src/main/java/me/bestvibes/exifdatefixer/CommandSanitizer.kt),
+  which blocks the small set of exiftool flags that can load arbitrary
+  Perl (`-config`, `-@`, `-stay_open`, `-execute*`).
+- Every executed command is appended to `filesDir/command_history.txt` for
+  audit (capped at 1 MB).
+
+## Credits
+
+- Build pipeline approach borrowed from [Termux](https://termux.com/)
+  (the `lib*.so` jniLibs trick for shipping executables).
+- Cross-compilation by [perl-cross](https://github.com/arsv/perl-cross).
+- ExifTool by [Phil Harvey](https://exiftool.org/).
