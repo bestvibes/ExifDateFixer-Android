@@ -223,6 +223,9 @@ build_perl_for_abi() {
         exit 1
     fi
     : > "${out_abi}/xs_manifest.txt"
+    # Sort so that manifest entry order is reproducible — `find` defaults to
+    # filesystem traversal order which varies between ext4, tmpfs, Docker
+    # overlay, etc. and would otherwise leak into the manifest's bytes.
     while IFS= read -r -d '' so; do
         local rel="${so#${arch_root}/auto/}"
         local dist="${rel%/*}"
@@ -230,7 +233,7 @@ build_perl_for_abi() {
         "${toolchain}/bin/llvm-strip" --strip-all -o "${out_abi}/jniLibs/${soname}" "${so}"
         chmod 0644 "${out_abi}/jniLibs/${soname}"
         echo "${rel} ${soname}" >> "${out_abi}/xs_manifest.txt"
-    done < <(find "${arch_root}/auto" -name '*.so' -print0)
+    done < <(find "${arch_root}/auto" -name '*.so' -print0 | LC_ALL=C sort -z)
 
     # Capture the pure-perl @INC tree (privlib + archlib's .pm subtree, minus auto/).
     local perl5_tree="${out_abi}/perl5"
