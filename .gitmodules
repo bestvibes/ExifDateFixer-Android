@@ -1,0 +1,3 @@
+[submodule "native/perl-cross"]
+	path = native/perl-cross
+	url = https://github.com/arsv/perl-cross.git

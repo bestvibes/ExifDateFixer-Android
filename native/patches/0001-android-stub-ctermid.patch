@@ -1,0 +1,18 @@
+--- a/ext/POSIX/POSIX.xs	2026-04-25 15:38:03
++++ b/ext/POSIX/POSIX.xs	2026-04-25 15:51:53
+@@ -3636,7 +3636,15 @@
+          * for all cases (so far...) */
+ 	s = (char *) safemalloc((size_t) L_ctermid);
+ #endif
++#ifdef __ANDROID__
++	/* Bionic only declares (and exports) ctermid in <stdio.h> at API >= 26.
++	 * Android apps have no controlling terminal anyway and exiftool never
++	 * calls ctermid, so returning NULL is harmless. */
++	RETVAL = NULL;
++	(void)s;
++#else
+ 	RETVAL = ctermid(s);
++#endif
+     OUTPUT:
+ 	RETVAL
+     CLEANUP:

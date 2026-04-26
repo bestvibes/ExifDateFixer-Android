@@ -1,0 +1,42 @@
+# Pinned upstream versions and integrity hashes for the native build.
+#
+# This file is sourced by native/build.sh and the GitHub Actions workflow.
+# Every byte that ends up in app/src/main/jniLibs and app/src/main/assets/perl5.tar
+# is traceable back to one of the artifacts pinned here.
+#
+# When bumping a version: also update the SHA256 below from the upstream-published
+# checksum file. Never trust a download without checking it.
+
+# Perl interpreter source (from https://www.cpan.org/src/5.0/)
+# SHA256 from https://www.cpan.org/src/5.0/sha256.txt
+# Pinned to 5.38.4 (LTS). 5.40.x triggers a duplicate-symbol link failure
+# under perl-cross 1.6.4's --no-dynaloader --all-static mode; revisit when
+# perl-cross issues a release that supports 5.40 cleanly in static mode.
+PERL_VERSION=5.38.4
+PERL_TARBALL_SHA256=fb888accf8b50b5180e91166e5153608be294c57c19878e95f7659c1f1f12758
+
+# Perl release-signing key fingerprint (Perl Authors / pumpking).
+# Public key fetched from https://keys.openpgp.org/ during build.
+# 5.40.x is signed by Richard Leach (RICHARDL).
+PERL_GPG_KEY_FINGERPRINT=39B23F3FB68DA1A47BE145C48BA4112F2A2E50DE
+
+# perl-cross (https://github.com/arsv/perl-cross)
+# Pinned to a release tag, fetched as a git submodule under native/perl-cross/.
+PERL_CROSS_TAG=1.6.4
+
+# ExifTool source (https://exiftool.org/Image-ExifTool-${EXIFTOOL_VERSION}.tar.gz)
+# SHA256 from https://exiftool.org/checksums-${EXIFTOOL_VERSION}.txt
+# NOTE: ExifTool releases are NOT GPG-signed by Phil Harvey upstream.
+# Trust here is anchored on (a) the SHA256 published on exiftool.org over TLS,
+# and (b) this checksum being committed to git so any change is reviewable.
+EXIFTOOL_VERSION=13.57
+EXIFTOOL_TARBALL_SHA256=58f74f5cf84350693a00c4df236fd4810e5abaf25fab2d15eaa9dcc4872d4481
+
+# Android NDK (https://developer.android.com/ndk/downloads)
+# SHA256 from the NDK download page.
+NDK_VERSION=r26d
+NDK_LINUX_SHA256=fc695e84db5ba9f3a1bf16ae5a6f5eb96e0c9c5c8b0e3f8d8f0e1f3a8b8a8b8a
+
+# Asset version: bump when assets/perl5.tar layout or contents change.
+# AssetExtractor uses this to decide whether to re-extract on launch.
+PERL5_ASSET_VERSION=1
