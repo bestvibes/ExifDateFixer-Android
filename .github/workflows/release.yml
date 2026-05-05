@@ -1,0 +1,137 @@
+name: release apk
+
+on:
+  push:
+    tags:
+      - 'release-*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag/name to use for the release (e.g. release-2026-05-05)'
+        required: true
+
+permissions:
+  contents: write
+  id-token: write
+  attestations: write
+
+jobs:
+  build:
+    name: build signed release APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve release name
+        id: meta
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            tag="${{ github.event.inputs.tag }}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+          echo "tag=${tag}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Decode keystore from secret
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${KEYSTORE_BASE64}" ]]; then
+            echo "::error::KEYSTORE_BASE64 secret is empty — cannot sign release"
+            exit 1
+          fi
+          mkdir -p "${RUNNER_TEMP}/keystore"
+          echo "${KEYSTORE_BASE64}" | base64 -d > "${RUNNER_TEMP}/keystore/release.jks"
+          chmod 600 "${RUNNER_TEMP}/keystore/release.jks"
+          echo "KEYSTORE_PATH=${RUNNER_TEMP}/keystore/release.jks" >> "${GITHUB_ENV}"
+
+      - name: Build release APKs
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Verify signing + collect APKs
+        run: |
+          set -euo pipefail
+          out_dir="${RUNNER_TEMP}/release-artifacts"
+          mkdir -p "${out_dir}"
+          shopt -s nullglob
+          for apk in app/build/outputs/apk/release/*.apk; do
+            name="ExifDateFixer-${{ steps.meta.outputs.tag }}-$(basename "${apk}" | sed 's/^app-//; s/-release\.apk$/.apk/')"
+            cp "${apk}" "${out_dir}/${name}"
+          done
+
+          build_tools_dir=$(ls -d "${ANDROID_HOME}/build-tools/"*/ | sort -V | tail -n1)
+          apksigner="${build_tools_dir}/apksigner"
+          for apk in "${out_dir}"/*.apk; do
+            "${apksigner}" verify --verbose "${apk}" >/dev/null
+            echo "verified: $(basename "${apk}")"
+          done
+
+          ( cd "${out_dir}" && shasum -a 256 *.apk > SHA256SUMS )
+          echo "ARTIFACT_DIR=${out_dir}" >> "${GITHUB_ENV}"
+          echo "--- SHA256SUMS ---"
+          cat "${out_dir}/SHA256SUMS"
+
+      - uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ env.ARTIFACT_DIR }}/*.apk
+
+      - name: Upload APKs as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apks-${{ steps.meta.outputs.tag }}
+          path: ${{ env.ARTIFACT_DIR }}
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${{ steps.meta.outputs.tag }}"
+
+          # workflow_dispatch path: tag the current commit if it isn't already.
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            if ! git rev-parse "refs/tags/${tag}" >/dev/null 2>&1; then
+              git tag "${tag}"
+              git push origin "${tag}"
+            fi
+          fi
+
+          notes_file="${RUNNER_TEMP}/notes.md"
+          {
+            echo "Built by \`.github/workflows/release.yml\` from commit \`${GITHUB_SHA}\`."
+            echo
+            echo "Verify the APK you downloaded with the matching line in \`SHA256SUMS\`,"
+            echo "and verify the build provenance with:"
+            echo
+            echo '```'
+            echo "gh attestation verify <apk> -R ${GITHUB_REPOSITORY}"
+            echo '```'
+            echo
+            echo "## SHA256SUMS"
+            echo '```'
+            cat "${ARTIFACT_DIR}/SHA256SUMS"
+            echo '```'
+          } > "${notes_file}"
+
+          gh release create "${tag}" \
+            --title "${tag}" \
+            --notes-file "${notes_file}" \
+            "${ARTIFACT_DIR}"/*.apk \
+            "${ARTIFACT_DIR}/SHA256SUMS"

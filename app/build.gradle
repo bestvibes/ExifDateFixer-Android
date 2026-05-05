@@ -29,10 +29,34 @@ android {
         buildConfig true
     }
 
+    // Release signing is wired through env vars so the keystore + passwords never
+    // land on disk in the repo. CI sets these from GitHub Actions secrets;
+    // locally, leave them unset and assembleRelease will fall back to debug
+    // signing (only useful for smoke-testing the release variant — never ship it).
+    def releaseKeystorePath = System.getenv("KEYSTORE_PATH")
+    def releaseKeystorePassword = System.getenv("KEYSTORE_PASSWORD")
+    def releaseKeyAlias = System.getenv("KEY_ALIAS")
+    def releaseKeyPassword = System.getenv("KEY_PASSWORD")
+    def hasReleaseSigning = releaseKeystorePath && releaseKeystorePassword && releaseKeyAlias && releaseKeyPassword
+
+    signingConfigs {
+        if (hasReleaseSigning) {
+            release {
+                storeFile file(releaseKeystorePath)
+                storePassword releaseKeystorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 

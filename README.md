@@ -26,8 +26,24 @@ and again before enabling advanced mode.
 
 ## Usage
 
-Install the latest release APK from GitHub, grant the storage permission on
-first launch, and pick files or a directory.
+Install the latest signed APK from the
+[Releases page](https://github.com/bestvibes/ExifDateFixer-Android/releases),
+grant the storage permission on first launch, and pick files or a directory.
+
+Pick the APK matching your device's ABI (most modern Android phones are
+`arm64-v8a`); if unsure, the `universal` APK works on all four supported
+ABIs at the cost of a larger download.
+
+Each release ships with `SHA256SUMS` and a SLSA build-provenance
+attestation. To verify what you downloaded was produced by this repo's CI
+from a specific commit:
+
+```bash
+shasum -a 256 -c SHA256SUMS
+gh attestation verify <apk> -R bestvibes/ExifDateFixer-Android
+```
+
+See [`RELEASING.md`](./RELEASING.md) for how releases are built and signed.
 
 ## Reproducible native build
 
