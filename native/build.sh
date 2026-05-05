@@ -171,13 +171,12 @@ build_perl_for_abi() {
 
         # The runtime @INC paths are the on-device locations the AssetExtractor populates.
         # Keep these in sync with FileUtils.getPerlAssetDir() in Kotlin.
-        local runtime_perl5="/data/data/me.bestvibes.exifdatefixer/files/perl5"
+        local runtime_perl5="/data/data/me.bestvibes.exiftoolwrapper/files/perl5"
 
         # Build a NORMAL perl (with DynaLoader). XS modules get their own .so files
-        # which ship via jniLibs (see post-build step). This is the same approach
-        # the original ExifDateFixer used and what Termux uses generally — the
-        # static-link variant turned out to require xs_init wiring that perl-cross
-        # doesn't generate cleanly under clang-NDK.
+        # which ship via jniLibs (see post-build step). This is what Termux uses
+        # generally — the static-link variant turned out to require xs_init wiring
+        # that perl-cross doesn't generate cleanly under clang-NDK.
         #
         # NOTE: do NOT pass -Dcc=clang here. perl-cross uses $CC from env (the
         # NDK wrapper script aarch64-linux-android24-clang) which already has the
@@ -216,7 +215,7 @@ build_perl_for_abi() {
 
     # Rename every XS .so under archlib/auto/<dist>/<dist>.so to libperl_xs_<flat>.so
     # where <flat> = <dist> with / replaced by __ (so Hash/Util/Util.so → Hash__Util).
-    local install_root="${work}/install/data/data/me.bestvibes.exifdatefixer/files/perl5"
+    local install_root="${work}/install/data/data/me.bestvibes.exiftoolwrapper/files/perl5"
     local arch_root="${install_root}/arch"
     if [[ ! -d "${arch_root}/auto" ]]; then
         echo "FATAL: no XS auto tree at ${arch_root}/auto" >&2

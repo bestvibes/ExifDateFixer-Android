@@ -1,4 +1,4 @@
-package me.bestvibes.exifdatefixer
+package me.bestvibes.exiftoolwrapper
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -25,7 +25,7 @@ class DisclaimerPrefs(context: Context) {
         set(value) { prefs.edit().putBoolean(KEY_ADVANCED_ENABLED, value).apply() }
 
     companion object {
-        private const val PREFS_NAME = "exifdatefixer_prefs"
+        private const val PREFS_NAME = "exiftoolwrapper_prefs"
         private const val KEY_DISCLAIMER = "accepted_disclaimer_v1"
         private const val KEY_ADVANCED = "accepted_advanced_warning_v1"
         private const val KEY_ADVANCED_ENABLED = "advanced_mode_enabled"

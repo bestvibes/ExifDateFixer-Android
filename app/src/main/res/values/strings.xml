@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ExifDateFixer</string>
+    <string name="app_name">ExifToolWrapper</string>
     <string name="file_list_header">Selected files/directory:</string>
     <string name="status_header">Status:</string>
     <string name="status_no_files">No files or directory selected!</string>

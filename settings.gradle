@@ -1,2 +1,2 @@
-rootProject.name='ExifDateFixer'
+rootProject.name='ExifToolWrapper'
 include ':app'

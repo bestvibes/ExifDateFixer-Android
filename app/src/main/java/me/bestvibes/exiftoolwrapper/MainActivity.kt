@@ -1,4 +1,4 @@
-package me.bestvibes.exifdatefixer
+package me.bestvibes.exiftoolwrapper
 
 import android.Manifest
 import android.annotation.SuppressLint

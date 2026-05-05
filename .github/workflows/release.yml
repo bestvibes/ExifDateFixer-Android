@@ -70,7 +70,7 @@ jobs:
           mkdir -p "${out_dir}"
           shopt -s nullglob
           for apk in app/build/outputs/apk/release/*.apk; do
-            name="ExifDateFixer-${{ steps.meta.outputs.tag }}-$(basename "${apk}" | sed 's/^app-//; s/-release\.apk$/.apk/')"
+            name="ExifToolWrapper-${{ steps.meta.outputs.tag }}-$(basename "${apk}" | sed 's/^app-//; s/-release\.apk$/.apk/')"
             cp "${apk}" "${out_dir}/${name}"
           done
 

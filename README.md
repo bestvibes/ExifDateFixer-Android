@@ -1,9 +1,7 @@
-# ExifDateFixer-Android
+# ExifToolWrapper-Android
 
-An Android app that runs [ExifTool](https://exiftool.org/) on-device using a
-Perl interpreter cross-compiled for Android. Useful for batch-fixing EXIF
-timestamps on screenshots, social-media downloads, and other images that
-arrive without proper metadata.
+An unofficial Android wrapper around [ExifTool](https://exiftool.org/) that
+runs it on-device using a Perl interpreter cross-compiled for Android.
 
 The original motivation: on Pixel devices, screenshots and Snapchat images
 arrive without EXIF timestamps, and Google Photos uses upload time as a
@@ -27,7 +25,7 @@ and again before enabling advanced mode.
 ## Usage
 
 Install the latest signed APK from the
-[Releases page](https://github.com/bestvibes/ExifDateFixer-Android/releases),
+[Releases page](https://github.com/bestvibes/exiftoolwrapper-android/releases),
 grant the storage permission on first launch, and pick files or a directory.
 
 Pick the APK matching your device's ABI (most modern Android phones are
@@ -40,7 +38,7 @@ from a specific commit:
 
 ```bash
 shasum -a 256 -c SHA256SUMS
-gh attestation verify <apk> -R bestvibes/ExifDateFixer-Android
+gh attestation verify <apk> -R bestvibes/exiftoolwrapper-android
 ```
 
 See [`RELEASING.md`](./RELEASING.md) for how releases are built and signed.
@@ -51,7 +49,7 @@ Earlier versions of this app committed pre-built `perl_*.xz` and
 `exiftool.xz` blobs straight into `app/src/main/res/raw/`. Those blobs had no
 provenance and no update path, which was both a security concern and the
 reason ExifTool was stuck at a 7-year-old release
-([#2](https://github.com/bestvibes/ExifDateFixer/issues/2)).
+([#2](https://github.com/bestvibes/exiftoolwrapper-android/issues/2)).
 
 The current build pipeline replaces that with:
 
@@ -88,7 +86,7 @@ longer explanation of how the chain works.
   Android's installer at install time. No `chmod` needed; no W^X violation.
 - `assets/perl5.tar` (the ExifTool script + `Image::ExifTool/` lib tree +
   perl's pure-perl `@INC`) is extracted to `filesDir/perl5/` on first
-  launch via [`AssetExtractor`](./app/src/main/java/me/bestvibes/exifdatefixer/AssetExtractor.kt).
+  launch via [`AssetExtractor`](./app/src/main/java/me/bestvibes/exiftoolwrapper/AssetExtractor.kt).
   `AssetExtractor` also creates symlinks at
   `filesDir/perl5/arch/auto/<dist>/<dist>.so` pointing to the matching
   `nativeLibraryDir/libperl_xs_*.so`, so perl's `DynaLoader` finds each XS
@@ -105,7 +103,7 @@ longer explanation of how the chain works.
   uses `ACTION_OPEN_DOCUMENT` so URIs come back with both read and write
   permission grants in one step.
 - The custom-command field is sanitized by
-  [`CommandSanitizer`](./app/src/main/java/me/bestvibes/exifdatefixer/CommandSanitizer.kt),
+  [`CommandSanitizer`](./app/src/main/java/me/bestvibes/exiftoolwrapper/CommandSanitizer.kt),
   which blocks the small set of exiftool flags that can load arbitrary
   Perl (`-config`, `-@`, `-stay_open`, `-execute*`).
 - Every executed command is appended to `filesDir/command_history.txt` for

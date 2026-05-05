@@ -94,9 +94,6 @@ native/out/
 # blanket-excludes *.so would otherwise drop them.
 !app/src/main/jniLibs/**/*.so
 
-# Old debug APK shipped in the original repo — no longer relevant
-ExifDateFixer-debug.apk
-
 # Local agent state
 .claude/
 

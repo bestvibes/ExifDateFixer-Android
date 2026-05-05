@@ -108,8 +108,8 @@ shasum -a 256 -c SHA256SUMS
 
 # build provenance: was this APK actually produced by our workflow from a
 # specific commit?
-gh attestation verify ExifDateFixer-release-2026-05-05-universal.apk \
-  -R bestvibes/ExifDateFixer-Android
+gh attestation verify ExifToolWrapper-release-2026-05-05-universal.apk \
+  -R bestvibes/exiftoolwrapper-android
 ```
 
 ## Local release builds (only for smoke-testing the variant)

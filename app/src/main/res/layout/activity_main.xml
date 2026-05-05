@@ -50,7 +50,7 @@
             app:layout_constraintLeft_toLeftOf="@id/file_list_text_scrollview"
             app:layout_constraintTop_toBottomOf="@id/status_text" />
 
-        <me.bestvibes.exifdatefixer.MaxHeightNestedScrollView
+        <me.bestvibes.exiftoolwrapper.MaxHeightNestedScrollView
             android:id="@+id/file_list_text_scrollview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -71,7 +71,7 @@
             android:paddingStart="4dp"
             android:paddingEnd="4dp" />
 
-        </me.bestvibes.exifdatefixer.MaxHeightNestedScrollView>
+        </me.bestvibes.exiftoolwrapper.MaxHeightNestedScrollView>
 
         <TextView
             android:id="@+id/command_header"
@@ -83,7 +83,7 @@
             app:layout_constraintLeft_toLeftOf="@id/command_text_scrollview"
             app:layout_constraintTop_toBottomOf="@id/file_list_text_scrollview" />
 
-        <me.bestvibes.exifdatefixer.MaxHeightNestedScrollView
+        <me.bestvibes.exiftoolwrapper.MaxHeightNestedScrollView
             android:id="@+id/command_text_scrollview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -103,7 +103,7 @@
             android:background="@color/colorAccent"
             android:paddingStart="4dp"
             android:paddingEnd="4dp" />
-        </me.bestvibes.exifdatefixer.MaxHeightNestedScrollView>
+        </me.bestvibes.exiftoolwrapper.MaxHeightNestedScrollView>
 
         <TextView
             android:id="@+id/output_header"
@@ -115,7 +115,7 @@
             app:layout_constraintLeft_toLeftOf="@id/output_text_scrollview"
             app:layout_constraintTop_toBottomOf="@id/command_text_scrollview" />
 
-        <me.bestvibes.exifdatefixer.MaxHeightNestedScrollView
+        <me.bestvibes.exiftoolwrapper.MaxHeightNestedScrollView
             android:id="@+id/output_text_scrollview"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -136,7 +136,7 @@
                 android:paddingStart="4dp"
                 android:paddingEnd="4dp" />
 
-        </me.bestvibes.exifdatefixer.MaxHeightNestedScrollView>
+        </me.bestvibes.exiftoolwrapper.MaxHeightNestedScrollView>
 
         <RadioGroup
             android:id="@+id/command_options"

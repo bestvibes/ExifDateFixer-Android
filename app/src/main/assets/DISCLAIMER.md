@@ -1,6 +1,6 @@
 # Disclaimer of Warranty and Liability
 
-ExifDateFixer is provided **"as is", without warranty of any kind**, express or
+ExifToolWrapper is provided **"as is", without warranty of any kind**, express or
 implied, including but not limited to warranties of merchantability, fitness
 for a particular purpose, non-infringement, or that the software is free of
 defects, secure, or will produce any particular result.
@@ -8,7 +8,7 @@ defects, secure, or will produce any particular result.
 This app modifies the metadata of your photo and video files, and in some
 modes overwrites the original files in place. **You are solely responsible for
 maintaining backups** of any files you process with this app. The author and
-contributors of ExifDateFixer accept **no responsibility for data loss, file
+contributors of ExifToolWrapper accept **no responsibility for data loss, file
 corruption, incorrect metadata, broken photo libraries, lost memories, missed
 legal deadlines based on EXIF dates, or any other harm** — direct, indirect,
 incidental, consequential, or otherwise — arising from your use of this
