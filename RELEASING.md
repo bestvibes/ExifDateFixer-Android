@@ -53,27 +53,40 @@ In the 1Password GUI, create a new item (type: Document) named
 
 ### 3. Push the secrets to GitHub Actions
 
-These commands pipe directly from 1Password to `gh secret set`, so the
-secrets never land on disk anywhere except 1Password and GitHub's encrypted
-secret store. Run from this repo's working directory:
+Capture each secret into a shell variable first, then check it's non-empty
+before piping into `gh secret set`. Direct `op read | gh secret set` looks
+clean but silently sets an empty secret if `op read` fails (e.g. field
+name mismatch) — which then fails the release build with a confusing
+"missing META-INF/MANIFEST.MF" error that's hard to trace back. Don't.
+
+Run from this repo's working directory:
 
 ```bash
-# keystore file → base64 → secret
+set -euo pipefail
+
+# Keystore file → base64 → secret. (`base64 -i FILE` doesn't go through
+# stdin so an empty/missing file produces a non-zero exit, not silent empty.)
 base64 -i ~/keystores/exiftoolwrapper-release.jks \
   | gh secret set KEYSTORE_BASE64
 
-# keystore password (also used as the key password — PKCS12 unifies them)
-op read "op://Private/ExifToolWrapper Release Keystore/password" \
-  | gh secret set KEYSTORE_PASSWORD
-op read "op://Private/ExifToolWrapper Release Keystore/password" \
-  | gh secret set KEY_PASSWORD
+# Keystore password (also used as the key password — PKCS12 unifies them)
+keystore_password=$(op read "op://Private/ExifToolWrapper Release Keystore/password")
+[[ -n "${keystore_password}" ]] || { echo "empty keystore password"; exit 1; }
+printf '%s' "${keystore_password}" | gh secret set KEYSTORE_PASSWORD
+printf '%s' "${keystore_password}" | gh secret set KEY_PASSWORD
+unset keystore_password
 
-# key alias
-op read "op://Private/ExifToolWrapper Release Keystore/Key Alias" \
-  | gh secret set KEY_ALIAS
+# Key alias is not a secret — it's just the string "exiftoolwrapper" baked
+# into the keystore. Hardcode it rather than round-tripping through op,
+# whose field-name resolution for labels with spaces ("Key Alias") is
+# unreliable and silently returns empty on miss.
+printf 'exiftoolwrapper' | gh secret set KEY_ALIAS
 ```
 
-Verify with `gh secret list` — you should see all four.
+Verify with `gh secret list` — you should see all four. To sanity-check
+that none are empty, kick off a workflow run and look at the masked env
+in any "Build" step's expanded log: a working secret prints as `***`,
+an empty one prints as a blank value after the `:`.
 
 ## Cutting a release
 
