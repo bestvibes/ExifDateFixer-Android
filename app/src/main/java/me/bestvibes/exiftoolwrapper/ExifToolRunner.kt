@@ -19,7 +19,7 @@ import java.io.File
  *
  * No shell is involved — ProcessBuilder takes a List<String> directly. There is
  * no way for a token in <user args> or <target paths> to escape into a shell
- * metacharacter. This is the foundation the CommandSanitizer relies on.
+ * metacharacter. This is the foundation the CommandParser relies on.
  */
 object ExifToolRunner {
 

@@ -1,11 +1,37 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <!-- Material 3 base theme. The Material library widgets (Chip, ChipGroup,
+         MaterialButton, MaterialCardView, MaterialToolbar) inherit colors and
+         shape semantics from this. -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorOnPrimary">@android:color/white</item>
+        <item name="android:statusBarColor">@color/colorPrimaryDark</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <style name="AppTheme.Toolbar" parent="Widget.MaterialComponents.Toolbar.Primary">
+        <item name="titleTextColor">@android:color/white</item>
+    </style>
+
+    <style name="AppTheme.SectionLabel" parent="TextAppearance.MaterialComponents.Overline">
+        <item name="android:textColor">?android:textColorSecondary</item>
+        <item name="android:letterSpacing">0.08</item>
+    </style>
+
+    <style name="AppTheme.Chip.Slot" parent="Widget.MaterialComponents.Chip.Action">
+        <item name="chipIconTint">?colorPrimary</item>
+        <item name="chipBackgroundColor">@color/chip_slot_background</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeColor">@color/chip_slot_stroke</item>
+    </style>
+
+    <style name="AppTheme.Card" parent="Widget.MaterialComponents.CardView">
+        <item name="cardElevation">1dp</item>
+        <item name="cardCornerRadius">12dp</item>
+        <item name="contentPadding">12dp</item>
     </style>
 
     <declare-styleable name="MaxHeightNestedScrollView">

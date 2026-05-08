@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#6200EE</color>
-    <color name="colorPrimaryDark">#3700B3</color>
-    <color name="colorAccent">#03DAC5</color>
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FFC107</color>
+
+    <color name="status_idle">#9E9E9E</color>
+    <color name="status_running">#1976D2</color>
+    <color name="status_success">#388E3C</color>
+    <color name="status_error">#D32F2F</color>
+
+    <color name="chip_slot_background">#F0F4FF</color>
+    <color name="chip_slot_stroke">#C5CAE9</color>
+    <color name="chip_slot_background_bound">#DCEDC8</color>
+    <color name="chip_slot_stroke_bound">#7CB342</color>
+
+    <color name="preview_background">#0D000000</color>
+    <color name="output_background">#FAFAFA</color>
+    <color name="surface_subtle">#F5F5F5</color>
 </resources>

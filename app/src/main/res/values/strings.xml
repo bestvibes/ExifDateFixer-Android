@@ -1,28 +1,78 @@
 <resources>
     <string name="app_name">ExifToolWrapper</string>
-    <string name="file_list_header">Selected files/directory:</string>
-    <string name="status_header">Status:</string>
-    <string name="status_no_files">No files or directory selected!</string>
-    <string name="status_select_option">Select a command option!</string>
-    <string name="status_ready">Ready!</string>
-    <string name="status_installing">Extracting exiftool…</string>
-    <string name="status_running">Running exiftool…</string>
-    <string name="status_request_write">Requesting permission to modify selected file(s)…</string>
-    <string name="status_error">Error!</string>
-    <string name="status_succeeded">Succeeded!</string>
-    <string name="command_header">Command:</string>
-    <string name="command_template">exiftool %s {images}</string>
-    <string name="output_header">Output:</string>
-    <string name="command_option_info">Get image metadata</string>
-    <string name="command_option_check_date">Check EXIF date</string>
-    <string name="command_option_modified">Set EXIF date from time modified</string>
-    <string name="command_option_filename">Set EXIF date from filename</string>
-    <string name="command_option_custom">Custom exiftool flags (advanced):</string>
-    <string name="command_option_custom_hint">Custom flags</string>
-    <string name="button_choose_files">Choose File(s)</string>
-    <string name="button_choose_dir">Choose Directory</string>
-    <string name="button_run">Run</string>
 
+    <!-- Section headers -->
+    <string name="section_command">What to do</string>
+    <string name="section_files">Files</string>
+    <string name="section_preview">Preview</string>
+    <string name="section_output">Output</string>
+
+    <!-- Status states -->
+    <string name="status_pick_command">Choose a preset or write a custom command.</string>
+    <string name="status_pick_files">Pick files for: %1$s</string>
+    <string name="status_ready">Ready to run.</string>
+    <string name="status_running">Running exiftool…</string>
+    <string name="status_installing">Extracting exiftool…</string>
+    <string name="status_succeeded">Done.</string>
+    <string name="status_error">Error.</string>
+
+    <!-- Presets -->
+    <string name="preset_show_metadata">Show metadata</string>
+    <string name="preset_show_metadata_desc">Read every tag from the picked files and print them.</string>
+    <string name="preset_check_date">Check EXIF date</string>
+    <string name="preset_check_date_desc">Print just the DateTimeOriginal value of each picked file.</string>
+    <string name="preset_date_from_filename">Date from filename</string>
+    <string name="preset_date_from_filename_desc">Set DateTimeOriginal from the filename. Overwrites the original.</string>
+    <string name="preset_date_from_modified">Date from modified time</string>
+    <string name="preset_date_from_modified_desc">Set DateTimeOriginal from the file modified time. Overwrites the original.</string>
+    <string name="preset_copy_metadata">Copy metadata between files</string>
+    <string name="preset_copy_metadata_desc">Replace ALL metadata in the destination with metadata copied from the source. The source file is not modified.</string>
+    <string name="preset_custom">Custom command</string>
+    <string name="preset_custom_desc">Type any exiftool flags. Use {source}, {target}, etc. to embed file slots inside the command.</string>
+
+    <!-- Custom field -->
+    <string name="custom_command_hint">e.g. -tagsFromFile {source} -all:all -overwrite_original {target}</string>
+    <string name="custom_toolbar_source">+ Source</string>
+    <string name="custom_toolbar_target">+ Target</string>
+    <string name="custom_toolbar_sidecar">+ Sidecar</string>
+    <string name="custom_toolbar_save">Save…</string>
+
+    <!-- Save preset dialog -->
+    <string name="save_preset_title">Save as preset</string>
+    <string name="save_preset_message">This command will appear alongside the built-in presets so you can run it again with one tap.</string>
+    <string name="save_preset_hint">Preset name</string>
+    <string name="save_preset_save">Save</string>
+    <string name="save_preset_cancel">Cancel</string>
+    <string name="save_preset_empty_text">Type a command before saving.</string>
+    <string name="save_preset_invalid">Fix the parse error before saving.</string>
+    <string name="save_preset_overwrite_fmt">Replace existing preset \"%1$s\"?</string>
+    <string name="delete_preset_title_fmt">Delete \"%1$s\"?</string>
+    <string name="delete_preset_message">This saved preset will be removed.</string>
+    <string name="delete_preset_confirm">Delete</string>
+    <string name="saved_preset_hint">Long-press the chip to delete this saved preset.</string>
+    <string name="saved_preset_toast_fmt">Saved \"%1$s\" — long-press the chip to delete.</string>
+
+    <!-- Slot picker chips -->
+    <string name="slot_chip_empty">Pick %1$s</string>
+    <string name="slot_chip_summary_one">%1$s</string>
+    <string name="slot_chip_summary_many">%1$d files</string>
+    <string name="slot_chip_folder">📁 %1$s</string>
+    <string name="slot_action_pick_files">Pick files</string>
+    <string name="slot_action_pick_folder">Pick folder (recursive)</string>
+    <string name="slot_action_clear">Clear</string>
+
+    <!-- Run button + footer -->
+    <string name="button_run">Run</string>
+    <string name="footer_writeback_warning">Files written: this will modify your originals.</string>
+    <string name="footer_readonly_only">Read-only command — no files will be modified.</string>
+
+    <!-- Preview placeholder -->
+    <string name="preview_empty">Pick a command to see the preview.</string>
+
+    <!-- Output -->
+    <string name="output_empty">No output yet. Press Run.</string>
+
+    <!-- Disclaimer (existing) -->
     <string name="disclaimer_title">Before you continue</string>
     <string name="disclaimer_accept">I understand</string>
     <string name="disclaimer_decline">Quit</string>
@@ -31,4 +81,15 @@
     <string name="advanced_warning_message">The custom command field passes your input directly to exiftool. The app blocks a small set of flags that load arbitrary code (such as -config and -@), but is otherwise unrestricted. You are solely responsible for what you run, including any files it modifies or destroys. Make a backup before running custom commands against files you care about.</string>
     <string name="advanced_warning_accept">Enable advanced mode</string>
     <string name="advanced_warning_decline">Cancel</string>
+
+    <!-- Confirmation before destructive presets -->
+    <string name="confirm_run_title">Run this command?</string>
+    <string name="confirm_run_overwrite_message">This will overwrite the original file(s):\n\n%1$s\n\nThe original metadata will be lost. Make sure you have a backup if you need one.</string>
+    <string name="confirm_run_continue">Run</string>
+    <string name="confirm_run_cancel">Cancel</string>
+
+    <!-- Menu -->
+    <string name="menu_command_history">Command history</string>
+    <string name="menu_about">About</string>
+    <string name="menu_show_advanced">Advanced mode</string>
 </resources>
