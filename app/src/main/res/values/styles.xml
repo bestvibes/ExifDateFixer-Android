@@ -3,7 +3,7 @@
     <!-- Material 3 base theme. The Material library widgets (Chip, ChipGroup,
          MaterialButton, MaterialCardView, MaterialToolbar) inherit colors and
          shape semantics from this. -->
-    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="AppTheme" parent="Theme.MaterialComponents.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
