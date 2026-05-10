@@ -32,7 +32,6 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.widget.doOnTextChanged
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
@@ -81,7 +80,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
 
     // -------- launchers --------
     private lateinit var filePickLauncher: ActivityResultLauncher<Intent>
-    private lateinit var dirPickLauncher: ActivityResultLauncher<Intent>
 
     // ----------------------------------------------------------------------
 
@@ -101,11 +99,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             handleFilePickResult(result.resultCode, result.data)
-        }
-        dirPickLauncher = registerForActivityResult(
-            ActivityResultContracts.StartActivityForResult()
-        ) { result ->
-            handleDirPickResult(result.resultCode, result.data)
         }
 
         wirePresetChips()
@@ -495,7 +488,10 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
                         ContextCompat.getColorStateList(this@MainActivity, R.color.chip_slot_stroke)
                     chipStrokeWidth = 2f
                 }
-                setOnClickListener { showSlotPickerSheet(slot) }
+                setOnClickListener {
+                    activePickKey = slot.key
+                    filePickLauncher.launch(makeFilePickerIntent(slot))
+                }
                 setOnCloseIconClickListener {
                     bindings.remove(slot.key)
                     applyActiveCommand()
@@ -509,10 +505,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val label = displayLabel(slot)
         if (b == null || b.uris.isEmpty()) {
             return getString(R.string.slot_chip_empty, label)
-        }
-        if (b.isFolder) {
-            val name = uriDisplayName(b.uris.first())
-            return "$label: " + getString(R.string.slot_chip_folder, name)
         }
         return when {
             b.uris.size == 1 -> "$label: ${uriDisplayName(b.uris.first())}"
@@ -528,48 +520,6 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     private fun displayLabel(slot: FileSlot): String {
         val cmd = resolveActiveCommand() ?: return slot.label()
         return contextAwareSlotLabel(slot, cmd.slots)
-    }
-
-    private fun showSlotPickerSheet(slot: FileSlot) {
-        val sheet = BottomSheetDialog(this)
-        sheet.setContentView(R.layout.sheet_slot_actions)
-
-        val title = sheet.findViewById<TextView>(R.id.sheet_title)!!
-        val pickFiles = sheet.findViewById<TextView>(R.id.action_pick_files)!!
-        val pickFolder = sheet.findViewById<TextView>(R.id.action_pick_folder)!!
-        val clear = sheet.findViewById<TextView>(R.id.action_clear)!!
-
-        title.text = slot.label()
-
-        // Hide actions that don't apply to this slot kind.
-        if (slot.kind == SlotKind.DIR) {
-            pickFiles.visibility = View.GONE
-        } else if (slot.count == SlotCount.ONE || slot.key.role != SlotRole.TARGET) {
-            // Folder mode (= recursive batch over a directory) is only meaningful
-            // for Target slots that accept many files. For single-file slots or
-            // non-Target roles, hide the folder option.
-            pickFolder.visibility = View.GONE
-        }
-
-        val existing = bindings[slot.key]
-        clear.visibility = if (existing != null && existing.uris.isNotEmpty()) View.VISIBLE else View.GONE
-
-        pickFiles.setOnClickListener {
-            sheet.dismiss()
-            activePickKey = slot.key
-            filePickLauncher.launch(makeFilePickerIntent(slot))
-        }
-        pickFolder.setOnClickListener {
-            sheet.dismiss()
-            activePickKey = slot.key
-            dirPickLauncher.launch(FileUtils.makeDirectoryPickerIntent())
-        }
-        clear.setOnClickListener {
-            sheet.dismiss()
-            bindings.remove(slot.key)
-            applyActiveCommand()
-        }
-        sheet.show()
     }
 
     private fun makeFilePickerIntent(slot: FileSlot): Intent =
@@ -590,20 +540,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         if (uris.isEmpty()) return
         val slot = currentSlot(key) ?: return
         val take = if (slot.count == SlotCount.ONE) uris.take(1) else uris
-        bindings[key] = CommandRunner.SlotBinding(slot, take, isFolder = false)
+        bindings[key] = CommandRunner.SlotBinding(slot, take)
         // Persist permissions so a re-resolve later doesn't lose access.
         for (u in take) tryTakePersistableReadWrite(u)
-        applyActiveCommand()
-    }
-
-    private fun handleDirPickResult(resultCode: Int, data: Intent?) {
-        val key = activePickKey ?: return
-        activePickKey = null
-        if (resultCode != Activity.RESULT_OK) return
-        val uri = data?.data ?: return
-        val slot = currentSlot(key) ?: return
-        bindings[key] = CommandRunner.SlotBinding(slot, listOf(uri), isFolder = true)
-        tryTakePersistableReadWrite(uri)
         applyActiveCommand()
     }
 
@@ -695,11 +634,8 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
     }
 
     private fun updateFooterWarning(cmd: Command) {
-        val anyTargetWriteback = cmd.slots.any { it.key.role == SlotRole.TARGET } &&
-            cmd.template.any { tok ->
-                tok is Token.Literal && tok.value == "-overwrite_original"
-            }
-        footerWarning.text = if (anyTargetWriteback) {
+        val mutates = cmd.mayMutateTargets()
+        footerWarning.text = if (mutates) {
             getString(R.string.footer_writeback_warning)
         } else {
             getString(R.string.footer_readonly_only)
@@ -707,7 +643,7 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         footerWarning.setTextColor(
             ContextCompat.getColor(
                 this,
-                if (anyTargetWriteback) R.color.status_error else R.color.status_success
+                if (mutates) R.color.status_error else R.color.status_success
             )
         )
     }
@@ -745,10 +681,9 @@ class MainActivity : AppCompatActivity(), CoroutineScope by MainScope() {
         val cmd = resolveActiveCommand() ?: return
         if (runner.unboundSlots(cmd, bindings).isNotEmpty()) return
 
-        // Confirm before destructive runs: any preset whose template contains
-        // -overwrite_original AND has Target bindings.
-        val isWriteback = cmd.template.any { it is Token.Literal && it.value == "-overwrite_original" }
-        if (isWriteback) {
+        // Confirm before destructive runs. Same predicate the footer uses, so
+        // every command that's flagged red in the UI also surfaces a confirm.
+        if (cmd.mayMutateTargets()) {
             val targets = cmd.slots.filter { it.key.role == SlotRole.TARGET }
                 .flatMap { bindings[it.key]?.uris ?: emptyList() }
                 .joinToString("\n") { uriDisplayName(it) }

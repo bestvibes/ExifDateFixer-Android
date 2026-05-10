@@ -30,12 +30,6 @@ class CommandRunner(private val context: Context) {
     data class SlotBinding(
         val slot: FileSlot,
         val uris: List<Uri>,
-        /**
-         * If true, the user picked this slot as a directory tree (SAF tree
-         * URI) rather than individual files. When any Target slot is bound
-         * as a folder, exiftool gets `-r` to recurse.
-         */
-        val isFolder: Boolean = false,
     )
 
     sealed class Outcome {
@@ -68,11 +62,6 @@ class CommandRunner(private val context: Context) {
      */
     fun preview(command: Command, bindings: Map<SlotKey, SlotBinding>): Preview {
         val tokens = mutableListOf<PreviewToken>()
-        val needsRecurse = command.slots
-            .filter { it.key.role == SlotRole.TARGET }
-            .any { bindings[it.key]?.isFolder == true }
-        if (needsRecurse) tokens += PreviewToken.Bound("-r")
-
         for (tok in command.template) {
             when (tok) {
                 is Token.Literal -> tokens += PreviewToken.Bound(tok.value)
@@ -146,50 +135,42 @@ class CommandRunner(private val context: Context) {
         // (e.g. -datetimeoriginal<filename).
         val cachedBySlot = mutableMapOf<SlotKey, List<Pair<File, Uri>>>()
 
+        // SHA-256 of every Target cache file before exec. After exec, we
+        // re-hash and skip writeback for files exiftool didn't modify, so
+        // read-only commands like "Show metadata" don't truncate+rewrite the
+        // user's original (which would otherwise update mtime and, on devices
+        // that redact GPS for ACCESS_MEDIA_LOCATION, silently strip GPS).
+        val targetCacheHashes = mutableMapOf<File, ByteArray>()
+
         try {
             for (slot in command.slots) {
                 val b = bindings.getValue(slot.key)
                 val cacheList = mutableListOf<Pair<File, Uri>>()
-                if (b.isFolder) {
-                    // Folder bindings: pass the tree-URI document path directly
-                    // to exiftool. Today's FileUtils.getDirectoryPathFromUri
-                    // resolves the local-fs path. No materialize needed.
-                    // For the runner, we synthesize a single "fake" file pair
-                    // whose `cacheFile` is the resolved directory path; no
-                    // writeback happens for folders since exiftool writes
-                    // in-place inside the dir.
-                    val path = FileUtils.getDirectoryPathFromUri(context, b.uris.first())
-                    cacheList += File(path) to b.uris.first()
-                } else {
-                    for (uri in b.uris) {
-                        val name = sanitizeFileName(displayName(uri))
-                        val cached = File(runDir, "${slot.key.role.tokenName}_${cacheList.size}_$name")
-                        try {
-                            context.contentResolver.openInputStream(uri).use { input ->
-                                if (input == null) throw IOException("Could not open ${b.slot.label()}")
-                                cached.outputStream().use { input.copyTo(it) }
-                            }
-                            readUriLastModified(context.contentResolver, uri)?.let {
-                                cached.setLastModified(it)
-                            }
-                        } catch (e: Exception) {
-                            return@withContext Outcome.Failure(
-                                "Failed to copy ${slot.label()}: ${e.message}", null, null,
-                            )
+                for (uri in b.uris) {
+                    val name = sanitizeFileName(displayName(uri))
+                    val cached = File(runDir, "${slot.key.role.tokenName}_${cacheList.size}_$name")
+                    try {
+                        context.contentResolver.openInputStream(uri).use { input ->
+                            if (input == null) throw IOException("Could not open ${b.slot.label()}")
+                            cached.outputStream().use { input.copyTo(it) }
                         }
-                        cacheList += cached to uri
+                        readUriLastModified(context.contentResolver, uri)?.let {
+                            cached.setLastModified(it)
+                        }
+                    } catch (e: Exception) {
+                        return@withContext Outcome.Failure(
+                            "Failed to copy ${slot.label()}: ${e.message}", null, null,
+                        )
+                    }
+                    cacheList += cached to uri
+                    if (slot.key.role.isWriteBack) {
+                        targetCacheHashes[cached] = sha256(cached)
                     }
                 }
                 cachedBySlot[slot.key] = cacheList
             }
 
-            // Build argv. -r prefix if any Target slot was bound as a folder.
-            val recurse = command.slots
-                .filter { it.key.role == SlotRole.TARGET }
-                .any { bindings[it.key]?.isFolder == true }
-
             val userArgs = mutableListOf<String>()
-            if (recurse) userArgs += "-r"
 
             for (tok in command.template) {
                 when (tok) {
@@ -226,15 +207,20 @@ class CommandRunner(private val context: Context) {
                 return@withContext Outcome.Failure("exiftool failed: ${e.message}", argv, null)
             }
 
-            // Write-back: only Target slots, and only if not folder (folders
-            // are operated on in place via the resolved fs path).
+            // Write-back: Target slots only, and only when exiftool actually
+            // modified the cache file. Skipping unchanged files is what makes
+            // read-only presets (Show metadata, Check EXIF date) genuinely
+            // non-destructive — the original URI is never reopened for write.
             val writebackErrors = mutableListOf<String>()
             for ((slotKey, files) in cachedBySlot) {
                 val slot = command.slots.first { it.key == slotKey }
                 if (!slot.key.role.isWriteBack) continue
-                val binding = bindings.getValue(slotKey)
-                if (binding.isFolder) continue
                 for ((cached, uri) in files) {
+                    val before = targetCacheHashes[cached]
+                    if (before != null && before.contentEquals(sha256(cached))) {
+                        Log.d(TAG, "skip writeback (unchanged): ${displayName(uri)}")
+                        continue
+                    }
                     try {
                         context.contentResolver.openOutputStream(uri, "wt").use { out ->
                             if (out == null) throw IOException("openOutputStream returned null")
@@ -268,6 +254,19 @@ class CommandRunner(private val context: Context) {
                 }
             }
         return uri.lastPathSegment ?: uri.toString()
+    }
+
+    private fun sha256(file: File): ByteArray {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        file.inputStream().use { input ->
+            val buf = ByteArray(64 * 1024)
+            while (true) {
+                val n = input.read(buf)
+                if (n < 0) break
+                md.update(buf, 0, n)
+            }
+        }
+        return md.digest()
     }
 
     private fun sanitizeFileName(name: String): String =

@@ -73,8 +73,7 @@ enum class SlotRole(
 ) {
     SOURCE("source", "Source", isWriteBack = false),
     TARGET("target", "Files", isWriteBack = true),
-    SIDECAR("sidecar", "Sidecar", isWriteBack = false),
-    OUTDIR("outdir", "Output folder", isWriteBack = false);
+    SIDECAR("sidecar", "Sidecar", isWriteBack = false);
 
     companion object {
         fun fromTokenName(name: String): SlotRole? =
@@ -82,13 +81,10 @@ enum class SlotRole(
     }
 }
 
-enum class SlotKind { FILE, DIR }
-
 enum class SlotCount { ONE, MANY }
 
 data class FileSlot(
     val key: SlotKey,
-    val kind: SlotKind = SlotKind.FILE,
     val count: SlotCount = SlotCount.ONE,
 ) {
     /** Human-readable label for picker chips and error messages. */
@@ -97,4 +93,34 @@ data class FileSlot(
         key.role == SlotRole.SIDECAR -> "${key.role.defaultLabel} (${key.variant})"
         else -> "${key.role.defaultLabel} ${key.variant}"
     }
+}
+
+/**
+ * Whether running this command is likely to mutate any Target-slot file.
+ *
+ * Used by the UI to show the "modifies originals" footer/confirm. The runner
+ * separately gates writeback on actual cache mutation, so a wrong answer
+ * here can't *cause* unwanted writes — it only affects what we warn about.
+ *
+ * Heuristic: any Target slot present, AND the template contains either
+ * `-overwrite_original` or a tag-assignment token (`-Tag=value` or
+ * `-Tag<source`). Doesn't try to whitelist exiftool flags like `-csv=…`,
+ * so a sidecar-output command will over-warn — preferred over under-warning.
+ */
+fun Command.mayMutateTargets(): Boolean {
+    if (slots.none { it.key.role == SlotRole.TARGET }) return false
+    return template.any { tok -> tokenMutatesTargets(tok) }
+}
+
+// `:` is allowed so grouped tag writes like `-EXIF:Make=Canon` and `-XMP:Title<...`
+// are recognized. `\w` already covers letters/digits/underscore.
+private val TAG_WRITE_REGEX = Regex("""^-[\w:]+[<=]""")
+
+private fun tokenMutatesTargets(tok: Token): Boolean = when (tok) {
+    is Token.Literal -> tok.value == "-overwrite_original" ||
+        TAG_WRITE_REGEX.containsMatchIn(tok.value)
+    is Token.Composite -> tok.parts.any { p ->
+        p is Token.Composite.Part.Text && TAG_WRITE_REGEX.containsMatchIn(p.value)
+    }
+    is Token.SlotRef -> false
 }

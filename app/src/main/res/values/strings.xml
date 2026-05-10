@@ -56,14 +56,10 @@
     <string name="slot_chip_empty">Pick %1$s</string>
     <string name="slot_chip_summary_one">%1$s</string>
     <string name="slot_chip_summary_many">%1$d files</string>
-    <string name="slot_chip_folder">📁 %1$s</string>
-    <string name="slot_action_pick_files">Pick files</string>
-    <string name="slot_action_pick_folder">Pick folder (recursive)</string>
-    <string name="slot_action_clear">Clear</string>
 
     <!-- Run button + footer -->
     <string name="button_run">Run</string>
-    <string name="footer_writeback_warning">Files written: this will modify your originals.</string>
+    <string name="footer_writeback_warning">Write-back command — your originals will be modified.</string>
     <string name="footer_readonly_only">Read-only command — no files will be modified.</string>
 
     <!-- Preview placeholder -->

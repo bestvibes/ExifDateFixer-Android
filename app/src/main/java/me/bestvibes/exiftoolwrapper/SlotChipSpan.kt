@@ -142,8 +142,7 @@ fun installSlotChipDecoration(
                     if (role == SlotRole.SIDECAR && variantOrNull == null) continue
                     val key = SlotKey(role, variantOrNull)
                     val count = if (dots.isNotEmpty()) SlotCount.MANY else SlotCount.ONE
-                    val kind = if (role == SlotRole.OUTDIR) SlotKind.DIR else SlotKind.FILE
-                    matches += Match(m.range, FileSlot(key, kind, count))
+                    matches += Match(m.range, FileSlot(key, count))
                 }
                 val allSlots = matches.map { it.slot }
                 for ((range, slot) in matches) {
